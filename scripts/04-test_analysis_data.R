@@ -1,69 +1,64 @@
 #### Preamble ####
-# Purpose: Tests... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 26 September 2024 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Tests the cleaned data from OpenDataToronto's blacklegged tick 
+# surveillance data
+# Author: Shrey Sati
+# Date: 26 September 2026
+# Contact: shrey.sati@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
+# Pre-requisites: 
+  # - 03-clean_data.R has run
+  # - data/02-analysis_data/analysis_data.csv exists
+  # - testthat and here packages are installed
+# Any other information needed? N/A
 
 
 #### Workspace setup ####
 library(tidyverse)
 library(testthat)
+library(here)
 
-data <- read_csv("data/02-analysis_data/analysis_data.csv")
-
-
-#### Test data ####
-# Test that the dataset has 151 rows - there are 151 divisions in Australia
-test_that("dataset has 151 rows", {
-  expect_equal(nrow(analysis_data), 151)
+# Test if the data file exists and can be loaded
+test_that("cleaned data file loads properly", {
+  expect_true(file.exists(here("data/02-analysis_data/analysis_data.csv")))
 })
 
-# Test that the dataset has 3 columns
-test_that("dataset has 3 columns", {
-  expect_equal(ncol(analysis_data), 3)
+cleaned_data <- read_csv(here("data/02-analysis_data/analysis_data.csv"))
+
+
+#### Test data structure and contents ####
+
+test_that("dataset dimensions are correct", {
+  expect_equal(nrow(cleaned_data), 233)
+  expect_equal(ncol(cleaned_data), 9)
 })
 
-# Test that the 'division' column is character type
-test_that("'division' is character", {
-  expect_type(analysis_data$division, "character")
+test_that("'id' is unique and in strictly increasing sequential order", {
+  expect_equal(cleaned_data$id, 1:233)
 })
 
-# Test that the 'party' column is character type
-test_that("'party' is character", {
-  expect_type(analysis_data$party, "character")
+test_that("the 'year' column contains only valid surveillance years", {
+  valid_years <- c(2013:2019, 2023)
+  expect_true(all(cleaned_data$year %in% valid_years))
 })
 
-# Test that the 'state' column is character type
-test_that("'state' is character", {
-  expect_type(analysis_data$state, "character")
+test_that("'park_locations' contains no missing or blank values", {
+  expect_false(any(is.na(cleaned_data$park_locations)))
+  expect_false(any(cleaned_data$park_locations == ""))
 })
 
-# Test that there are no missing values in the dataset
-test_that("no missing values in dataset", {
-  expect_true(all(!is.na(analysis_data)))
+test_that("'total_blts' matches 'blt_adults_and_nymphs'", {
+  expect_identical(cleaned_data$total_blts, cleaned_data$blt_adults_and_nymphs)
 })
 
-# Test that 'division' contains unique values (no duplicates)
-test_that("'division' column contains unique values", {
-  expect_equal(length(unique(analysis_data$division)), 151)
+test_that("'num_positive' is never greater than 'blt_adults_and_nymphs'", {
+  expect_true(all(cleaned_data$num_positive <= cleaned_data$blt_adults_and_nymphs))
 })
 
-# Test that 'state' contains only valid Australian state or territory names
-valid_states <- c("New South Wales", "Victoria", "Queensland", "South Australia", "Western Australia", 
-                  "Tasmania", "Northern Territory", "Australian Capital Territory")
-test_that("'state' contains valid Australian state names", {
-  expect_true(all(analysis_data$state %in% valid_states))
+test_that("coordinates fall within the expected geographic bounding box", {
+  # Check latitude boundaries (43.55 to 43.87), with some padding
+  expect_true(all(cleaned_data$latitude >= 43.55 & cleaned_data$latitude <= 43.87))
+  
+  # Check longitude boundaries (-79.65 to -79.10), with some padding
+  expect_true(all(cleaned_data$longitude >= -79.65 & cleaned_data$longitude <= -79.10))
 })
 
-# Test that there are no empty strings in 'division', 'party', or 'state' columns
-test_that("no empty strings in 'division', 'party', or 'state' columns", {
-  expect_false(any(analysis_data$division == "" | analysis_data$party == "" | analysis_data$state == ""))
-})
-
-# Test that the 'party' column contains at least 2 unique values
-test_that("'party' column contains at least 2 unique values", {
-  expect_true(length(unique(analysis_data$party)) >= 2)
-})
