@@ -6,7 +6,7 @@
 # License: MIT
 # Pre-requisites:
   # - 02-download_data.R has been run
-  # - data/raw_data/raw_data.csv exists
+  # - data/01-raw_data/raw_data.csv exists
 # Any other information needed? N/A
 
 #### Workspace setup ####
