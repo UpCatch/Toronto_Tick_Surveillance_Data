@@ -125,53 +125,6 @@ ggplot(plot_data, aes(x = year, y = total_blts)) +
 ```
 
 ```{r}
-#| label: fig-annual-total-ticks
-#| fig-cap: "Total adult and nymph blacklegged ticks collected per year across all surveyed parks in Toronto."
-#| echo: false
-#| warning: false
-#| message: false
-
-# Aggregate total ticks by year and retain all years 2013-2023
-annual_ticks <- analysis_data |> 
-  group_by(year) |> 
-  summarize(sum_blts = sum(total_blts, na.rm = TRUE), .groups = "drop") |> 
-  complete(
-    year = 2013:2023,
-    fill = list(sum_blts = NA)
-  ) |> 
-  mutate(year = factor(year, levels = 2013:2023))
-
-# Plot bar chart
-ggplot(annual_ticks, aes(x = year, y = sum_blts)) +
-  geom_col(
-    fill = "#2c7bb6",
-    width = 0.65,
-    na.rm = TRUE
-  ) +
-  geom_text(
-    aes(label = ifelse(is.na(sum_blts), "", scales::comma(sum_blts))),
-    vjust = -0.5,
-    size = 3.3,
-    color = "grey20"
-  ) +
-  scale_x_discrete(drop = FALSE) +
-  scale_y_continuous(
-    expand = expansion(mult = c(0, 0.12)),
-    labels = scales::comma
-  ) +
-  labs(
-    x = "Year",
-    y = "Total Blacklegged Ticks (Adults & Nymphs)"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    panel.grid.minor = element_blank(),
-    panel.grid.major.x = element_blank(),
-    axis.line.x = element_line(color = "grey60", linewidth = 0.4)
-  )
-```
-
-```{r}
 #| label: fig-positivity-rate
 #| fig-cap: "From 2016 onward, between 29% and 43% of the blacklegged ticks collected in Toronto parks each year tested positive. The number under each year (n) is the count of adult and nymph ticks collected that year. 2013 and 2014 are omitted because only one and three ticks were collected, too few for a meaningful rate. No surveillance took place in 2020–2022 (shaded)."
 #| echo: false
