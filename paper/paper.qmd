@@ -15,10 +15,15 @@ bibliography: references.bib
 #| include: false
 #| warning: false
 #| message: false
+#| echo: false
 
 library(tidyverse)
 library(here)
+library(sf)
 library(tinytable)
+
+# Load the dataset
+analysis_data <- read_csv(here("data", "02-analysis_data", "analysis_data.csv"))
 ```
 
 
@@ -52,17 +57,44 @@ Overview text
 Some paragraphs about how we go from a phenomena in the world to an entry in the dataset.
 
 ```{r}
+#| label: tbl-annual-tick-summary
+#| tbl-cap: "The share of collected adult and nymph ticks that tested positive rose from under 6% before 2016 to between 29% and 43% from 2016 onward. No surveillance took place in 2020–2022."
+#| echo: false
+#| warning: false
+#| message: false
+
+# Summarize the data by year
+summary_table <- analysis_data |> 
+  group_by(year) |> 
+  summarize(
+    `Parks surveyed` = n(),
+    `Parks with ticks` = sum(total_blts > 0, na.rm = TRUE),
+    `Adults and nymphs` = sum(blt_adults_and_nymphs, na.rm = TRUE),
+    `Larvae` = sum(blt_larvae, na.rm = TRUE),
+    `Tested positive` = sum(num_positive, na.rm = TRUE),
+    .groups = "drop"
+  ) |> 
+  mutate(
+    `Positive (%)` = (`Tested positive` / `Adults and nymphs`) * 100
+  ) |> 
+  rename(Year = year)
+
+# Generate the tinytable with formatting
+tt(summary_table, width = 1) |> 
+  format_tt(j = 2:6, digits = 0, num_mark_big = ",") |> 
+  # num_fmt = "decimal" gives one decimal place (the default rounds to significant figures)
+  format_tt(j = 7, digits = 1, num_fmt = "decimal", num_zero = TRUE) |> 
+  # Escape the % in the column name so LaTeX prints it instead of treating it as a comment
+  format_tt(escape = TRUE) |> 
+  style_tt(j = 2:7, align = "r")
+```
+
+```{r}
 #| label: fig-tick-surveillance
 #| fig-cap: "Distribution of total blacklegged ticks collected per park across surveillance years in Toronto."
 #| echo: false
 #| warning: false
 #| message: false
-
-library(tidyverse)
-library(here)
-
-# Load the dataset
-analysis_data <- read_csv(here("data", "02-analysis_data", "analysis_data.csv"))
 
 # Convert year to factor with full levels from 2013 to 2023 to display gap years
 full_years <- as.character(2013:2023)
@@ -135,16 +167,13 @@ ggplot(annual_ticks, aes(x = year, y = sum_blts)) +
   theme(
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
-    axis.line.x = element_line(color = "grey60", linewidth = 0.4),
-    plot.title = element_text(face = "bold", size = 13),
-    plot.subtitle = element_text(color = "grey35", margin = margin(b = 10))
+    axis.line.x = element_line(color = "grey60", linewidth = 0.4)
   )
 ```
 
-
 ```{r}
 #| label: fig-positivity-rate
-#| fig-cap: "Annual blacklegged tick positivity rate across Toronto parks (2015–2023), with the number of positive ticks annotated."
+#| fig-cap: "From 2016 onward, between 29% and 43% of the blacklegged ticks collected in Toronto parks each year tested positive. The number under each year (n) is the count of adult and nymph ticks collected that year. 2013 and 2014 are omitted because only one and three ticks were collected, too few for a meaningful rate. No surveillance took place in 2020–2022 (shaded)."
 #| echo: false
 #| warning: false
 #| message: false
@@ -162,18 +191,35 @@ positivity_data <- analysis_data |>
     pct_positive = (total_positive / total_tested) * 100
   ) |> 
   complete(
-    year = 2015:2023,
-    fill = list(pct_positive = NA, total_positive = NA)
+    year = 2015:2023
   ) |> 
   mutate(
-    year_factor = factor(year, levels = 2015:2023)
+    year_label = if_else(
+      is.na(total_tested),
+      as.character(year),
+      paste0(year, "\nn = ", total_tested)
+    ),
+    # Keep the years in order on the axis
+    year_label = factor(year_label, levels = year_label),
+    # Separate groups so the line does not bridge the 2020-2022 gap
+    period = if_else(year < 2020, "before", "after")
   )
 
 # Plot line chart
-ggplot(positivity_data, aes(x = year_factor, y = pct_positive, group = 1)) +
-  # Shade the years with no surveillance (x positions 6 to 8 are 2020 to 2022)
-  #annotate("rect", xmin = 5.5, xmax = 8.5, ymin = -Inf, ymax = Inf, fill = "grey90") +
-  #annotate("text", x = 7, y = 25, label = "No surveillance", colour = "grey40") +
+ggplot(positivity_data, aes(x = year_label, y = pct_positive, group = period)) +
+  # Declare discrete x-axis
+  scale_x_discrete(drop = FALSE) +
+  # Shade years 2020-2022 with no surveillance 
+  annotate(
+    "rect",
+    xmin = 5.5, xmax = 8.5, ymin = -Inf, ymax = Inf,
+    fill = "grey92"
+  ) +
+  annotate(
+    "text",
+    x = 7, y = 25, label = "No surveillance",
+    colour = "grey40", size = 3.5
+  ) +
   geom_line(
     color = "#8B0000",
     linewidth = 0.9,
@@ -184,18 +230,10 @@ ggplot(positivity_data, aes(x = year_factor, y = pct_positive, group = 1)) +
     size = 2.8,
     na.rm = TRUE
   ) +
-  geom_text(
-    aes(label = ifelse(is.na(total_tested), "", paste0("n = ", total_tested))),
-    vjust = -1.2,
-    size = 3.2,
-    color = "grey25",
-    na.rm = TRUE
-  ) +
-  scale_x_discrete(drop = FALSE) +
   scale_y_continuous(
     limits = c(0, 50),
     labels = scales::label_percent(scale = 1),
-    expand = expansion(mult = c(0.05, 0.18))
+    expand = expansion(mult = c(0, 0.05))
   ) +
   labs(
     x = "Surveillance Year",
@@ -209,28 +247,43 @@ ggplot(positivity_data, aes(x = year_factor, y = pct_positive, group = 1)) +
   )
 ```
 
+
 ```{r}
 #| label: fig-toronto-ticks-map
-#| fig-cap: "Geographic distribution of blacklegged tick surveillance sites in Toronto. Each dot represents a park summary aggregated over all surveillance years."
+#| fig-cap: "Blacklegged ticks cluster in the east end of Toronto, around the Rouge Valley, with a smaller cluster on the Toronto Islands. Each circle is one surveillance site, with counts summed over all years surveyed. Hollow grey circles mark sites where no ticks were ever found; red circles are sized by the total number of adult and nymph ticks collected. The grey outline is the City of Toronto boundary."
 #| echo: false
-#| warning: false
-#| message: false
+#| fig-width: 7
+#| fig-height: 4.5
+
+# Read the local geographic boundary file
+toronto_boundary <- read_sf(here("data", "01-raw_data", "toronto_boundary.gpkg"))
 
 # Aggregate total ticks found per site across all surveillance years
-park_summary <- analysis_data |> 
-  group_by(park_locations, latitude, longitude) |> 
+park_summary <- analysis_data |>
+  group_by(park_locations) |>
   summarize(
     total_ticks = sum(total_blts, na.rm = TRUE),
+    latitude = first(latitude),
+    longitude = first(longitude),
     .groups = "drop"
-  )
+  ) |>
+  # Draw small circles last so they sit on top of large ones
+  arrange(desc(total_ticks))
 
 # Split data into zero-count sites and positive-count sites
 zero_parks <- park_summary |> filter(total_ticks == 0)
 pos_parks  <- park_summary |> filter(total_ticks > 0)
 
-# Plot geographic scatter
+# Plot geographic map
 ggplot() +
-  # Hollow grey circles for sites with 0 ticks
+  # Base map of Toronto boundary
+  geom_sf(
+    data = toronto_boundary,
+    fill = "grey97",
+    color = "grey60",
+    linewidth = 0.3
+  ) +
+  # Small hollow grey circles for sites with 0 ticks
   geom_point(
     data = zero_parks,
     aes(x = longitude, y = latitude),
@@ -240,38 +293,34 @@ ggplot() +
     stroke = 0.8,
     alpha = 0.6
   ) +
-  # Sized, dark red circles for sites where ticks were detected
+  # Sized, red circles with a thin white outline for detected ticks
   geom_point(
     data = pos_parks,
     aes(x = longitude, y = latitude, size = total_ticks),
-    shape = 16,         # Solid circle
-    color = "#8b0000",  # Dark red
-    alpha = 0.55
+    shape = 21,
+    fill = "#8b0000",
+    color = "white",
+    stroke = 0.6,
+    alpha = 0.75
   ) +
+  # Geographic text labels
+  annotate("text", x = -79.18, y = 43.838, label = "Rouge Valley", size = 3.5, fontface = "italic", color = "grey20") +
+  annotate("text", x = -79.38, y = 43.603, label = "Toronto Islands", size = 3.5, fontface = "italic", color = "grey20") +
+  annotate("text", x = -79.38, y = 43.655, label = "Downtown", size = 3.5, fontface = "bold", color = "grey20") +
+  annotate("text", x = -79.45, y = 43.585, label = "Lake Ontario", size = 4.5, fontface = "italic", color = "steelblue") +
+  # Scales and Coordinate system
   scale_size_continuous(
-    limits = c(1, 150),
-    breaks = c(1, 25, 50, 100, 150),
+    breaks = c(10, 50, 200),
     range = c(2.5, 9),
-    name = "Ticks Detected"
+    name = "Ticks Collected (all years)"
   ) +
-  coord_quickmap(
-    xlim = c(-79.62, -79.14),
-    ylim = c(43.59, 43.83)
+  coord_sf(
+    xlim = c(-79.65, -79.10),
+    ylim = c(43.57, 43.85), # Expanded slightly to fit Lake Ontario label
+    expand = FALSE
   ) +
-  labs(
-    x = "Longitude (°W)",
-    y = "Latitude (°N)",
-    title = "Blacklegged Tick Surveillance Sites Across Toronto Parks",
-    subtitle = "Hollow grey circles denote zero detections; red circles indicate tick presence",
-    caption = "Note: Each dot is a summary over all years."
-  ) +
-  theme_minimal(base_size = 12) +
+  theme_void(base_size = 12) +
   theme(
-    panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "#fafafa", color = NA),
-    plot.title = element_text(face = "bold", size = 13),
-    plot.subtitle = element_text(color = "grey35", margin = margin(b = 10)),
-    plot.caption = element_text(face = "italic", color = "grey40", size = 9, margin = margin(t = 10)),
     legend.position = "right"
   )
 ```
@@ -279,6 +328,7 @@ ggplot() +
 ```{r}
 #| label: fig-top10-parks
 #| fig-cap: "Top 10 Toronto parks with the highest cumulative blacklegged tick counts across all surveillance years."
+#| echo: false
 #| fig-height: 5
 #| warning: false
 #| message: false
@@ -291,7 +341,7 @@ top10_parks <- analysis_data |>
     .groups = "drop"
   ) |> 
   filter(total_ticks >= 1) |> 
-  slice_max(order_by = total_ticks, n = 10) |> 
+  slice_max(order_by = total_ticks, n = 10, with_ties=FALSE) |> 
   mutate(
     park_locations = fct_reorder(park_locations, total_ticks)
   )
@@ -312,12 +362,10 @@ ggplot(top10_parks, aes(x = total_ticks, y = park_locations)) +
     expand = expansion(mult = c(0, 0.12)),
     labels = scales::comma
   ) +
+  scale_y_discrete(labels = scales::label_wrap(24)) +
   labs(
     x = "Total Blacklegged Ticks (Adults & Nymphs)",
-    y = NULL,
-    title = "Top 10 Toronto Parks by Blacklegged Tick Counts",
-    subtitle = "Aggregated across all surveillance years (2013–2019, 2023)",
-    caption = "Data: Toronto Public Health Blacklegged Tick Surveillance"
+    y = NULL
   ) +
   theme_minimal(base_size = 12) +
   theme(
@@ -325,9 +373,6 @@ ggplot(top10_parks, aes(x = total_ticks, y = park_locations)) +
     panel.grid.major.y = element_blank(),
     axis.line.x = element_line(color = "grey60", linewidth = 0.4),
     axis.text.y = element_text(size = 10, face = "bold", color = "grey20"),
-    plot.title = element_text(face = "bold", size = 13),
-    plot.subtitle = element_text(color = "grey35", margin = margin(b = 10)),
-    plot.caption = element_text(color = "grey40", size = 8, margin = margin(t = 10))
   )
 ```
 
