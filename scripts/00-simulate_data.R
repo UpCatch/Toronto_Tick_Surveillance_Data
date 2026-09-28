@@ -56,4 +56,4 @@ simulated_data <-
   select(-found_ticks)
 
 #### Save data ####
-write_csv(simulated_data, file="data/01-raw_data/simulated_data.csv")
+write_csv(simulated_data, file="data/00-simulated_data/simulated_data.csv")
