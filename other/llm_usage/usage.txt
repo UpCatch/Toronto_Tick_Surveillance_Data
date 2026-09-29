@@ -1,32 +1,1010 @@
-LLM: ChatGPT-4.
-Date: 2 January 2024
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 1/17
+Extracting Coordinates in R Using Regex
+https://gemini.google.com/app/0b3ccdf9d87342a8
+User prompt: In R, how can I use regex to extract the values of the latitude/longitude coordinates in a string like this? {"coordinates": [[-79.360567,
+43.62612]], "type": "MultiPoint"}
+Response: To extract coordinates using regex in R, you can match optional negative signs and floating-point numbers inside brackets. In GeoJSON
+format, coordinates are ordered as [longitude, latitude].
+Here are the best ways to do this, depending on your preferred package ecosystem:
+Option 1: Base R (regmatches + gregexpr)
+Base R uses Perl-compatible regular expressions (perl = TRUE) to match any sequence representing a signed decimal number (-?[0-9]+\.?[0-
+9]*):
+txt <- '{"coordinates": [[-79.360567, 43.62612]], "type": "MultiPoint"}'
+# Pattern matching signed integers or decimals
+pattern <- "-?\\d+\\.?\\d*"
+# Extract all numeric values
+matches <- regmatches(txt, gregexpr(pattern, txt, perl = TRUE))[[1]]
+coords <- as.numeric(matches)
+lon <- coords[1] # -79.360567
+lat <- coords[2] # 43.62612
+Option 2: Using stringr (stringr::str_match)
+If you want to explicitly capture both values in one shot directly from the [[...]] block:
+library(stringr)
+pattern <- '\\[\\[\\s*(-?\\d+\\.\\d+)\\s*,\\s*(-?\\d+\\.\\d+)\\s*\\]\\]'
+result <- str_match(txt, pattern)
+lon <- as.numeric(result[, 2]) # -79.360567
+lat <- as.numeric(result[, 3]) # 43.62612
+\\[\\[ matches the opening double brackets.
+(-?\\d+\\.\\d+) creates a capture group for negative or positive decimal numbers.
+\\s*,\\s* matches the comma delimiter with any surrounding whitespace.
+Alternative: Parse as JSON (Recommended)
+Because your input is valid JSON/GeoJSON, parsing the string structurally is generally safer and less fragile than regex:
+library(jsonlite)
+data <- fromJSON(txt)
+# Coordinates array: matrix or nested vector
+coords <- data$coordinates[1, ]
+lon <- coords[1] # -79.360567
+lat <- coords[2] # 43.62612
+User prompt: Can you convert the below R testing script so that it uses the test_that() package instead: #### Preamble #### # Purpose: Tests the
+simulated Toronto blacklegged tick (BLT) surveillance data # Author: Shrey Sati # Date: 26 September 2026 # Contact: shrey.sati@mail.utoronto.ca
+# License: MIT # Pre-requisites: # - The `tidyverse` package must be installed and loaded # - 00-simulate_data.R must have been run # Any other
+information needed? N/A #### Workspace setup #### library(tidyverse) simulated_data <- read_csv("data/01-raw_data/simulated_data.csv") # Test
+if the data was successfully loaded if (exists("simulated_data")) { message("Test Passed: The dataset was successfully loaded.") } else { stop("Test
+Failed: The dataset could not be loaded.") } #### Test data #### # Check if dataset has 233 rows if (nrow(simulated_data) == 233) { message("Test
+Passed: The dataset has 233 rows.") } else { stop("Test Failed: The dataset does not have 233 rows.") } # Check if dataset has 9 columns if
+(ncol(simulated_data) == 9) { message("Test Passed: The dataset has 9 columns.") } else { stop("Test Failed: The dataset does not have 9
+columns.") } # Check if every id is unique and in increasing order if (all(simulated_data$id == 1:233)) { message("Test Passed: 'id' is unique and in
+increasing order.") } else { stop("Test Failed: 'id' is not in increasing order.") } # Check if years are valid are_years_valid <- c(2013:2019, 2023) if
+(all(simulated_data$year %in% are_years_valid)) { message("Test Passed: The 'year' column only contained valid years.") } else { stop("Test
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 2/17
+Failed: The 'year' column does not contain valid years.") } # Check if 'park_locations' contains no missing/blank values if
+(all(!is.na(simulated_data$park_locations)) && all(simulated_data$park_locations != "")) { message("Test Passed: 'park_locations' contains no
+missing/blank values.") } else { stop("Test Failed: 'park_locations' contains missing/blank values.") } # Check if 'total_blts' always equals
+'blt_adults_and_nymphs' if (all(simulated_data$total_blts == simulated_data$blt_adults_and_nymphs)) { message("Test Passed: 'total_blts' always
+equals 'blt_adults_and_nymphs'.") } else { stop("Test Failed: 'total_blts' does not always equals 'blt_adults_and_nymphs'.") } # Check if
+'num_positive' is never greater than 'blt_adults_and_nymphs' if (all(simulated_data$num_positive <= simulated_data$blt_adults_and_nymphs)) {
+message("Test Passed: 'num_positive' is never greater than 'blt_adults_and_nymphs'.") } else { stop("Test Failed: 'num_positive' is greater than
+'blt_adults_and_nymphs' in at least one row.") }
+Response: Here is the converted testing script refactored to use the testthat package with idiomatic expectations (expect_true, expect_equal,
+expect_identical, etc.):
+#### Preamble ####
+# Purpose: Tests the simulated Toronto blacklegged tick (BLT) surveillance data
+# Author: Shrey Sati
+# Date: 26 September 2026
+# Contact: shrey.sati@mail.utoronto.ca
+# License: MIT
+# Pre-requisites:
+ # - The `tidyverse` and `testthat` packages must be installed and loaded
+ # - 00-simulate_data.R must have been run
+# Any other information needed? N/A
+#### Workspace setup ####
+library(tidyverse)
+library(testthat)
+# Test if the data file exists and can be loaded
+test_that("simulated data file loads properly", {
+ expect_true(file.exists("data/01-raw_data/simulated_data.csv"))
+})
+simulated_data <- read_csv("data/01-raw_data/simulated_data.csv", show_col_types = FALSE)
+#### Test data structure and contents ####
+test_that("dataset dimensions are correct", {
+ expect_equal(nrow(simulated_data), 233)
+ expect_equal(ncol(simulated_data), 9)
+})
+test_that("'id' is unique and in strictly increasing sequential order", {
+ expect_identical(simulated_data$id, 1:233)
+})
+test_that("the 'year' column contains only valid surveillance years", {
+ valid_years <- c(2013:2019, 2023)
+ expect_true(all(simulated_data$year %in% valid_years))
+})
+test_that("'park_locations' contains no missing or blank values", {
+ expect_false(any(is.na(simulated_data$park_locations)))
+ expect_false(any(simulated_data$park_locations == ""))
+})
+test_that("'total_blts' matches 'blt_adults_and_nymphs'", {
+ expect_identical(simulated_data$total_blts, simulated_data$blt_adults_and_nymphs)
+})
+test_that("'num_positive' is never greater than 'blt_adults_and_nymphs'", {
+ expect_true(all(simulated_data$num_positive <= simulated_data$blt_adults_and_nymphs))
+})
+Key Improvements:
+Logical grouping: Tests are grouped into descriptive test_that() blocks (e.g., dimensions, data integrity, constraints).
+Exact assertions: Replaced generic boolean checks with specific expectations like expect_identical() for exact vector equality and
+expect_false(any(...)) for cleaner missing-data diagnostics.
+Fail-safe loading: Uses expect_true(file.exists(...)) to verify the target file is present before reading.
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 3/17
+User prompt: What would the R code be for a test that checks whether the coordinates for analysis_data$latitude fall between 43.55 and 43.87 and
+the analysis_data$longitude falls between -79.65 and -79.10
+Response: Here is the testthat code to check that all latitude and longitude coordinates fall strictly within those bounding ranges (representing the
+Greater Toronto Area):
+test_that("coordinates fall within the expected geographic bounding box", {
+ # Check latitude boundaries (43.55 to 43.87)
+ expect_true(all(analysis_data$latitude >= 43.55 & analysis_data$latitude <= 43.87))
 
+ # Check longitude boundaries (-79.65 to -79.10)
+ expect_true(all(analysis_data$longitude >= -79.65 & analysis_data$longitude <= -79.10))
+})
+Alternative: Writing separate tests or checking for NAs
+If your dataset might contain missing values (NA), all(...) will return NA instead of TRUE/FALSE. You can make the test more robust and informative
+by verifying there are no missing values first:
+test_that("latitude values are valid and within range", {
+ expect_false(any(is.na(analysis_data$latitude)))
+ expect_true(all(analysis_data$latitude >= 43.55 & analysis_data$latitude <= 43.87))
+})
+test_that("longitude values are valid and within range", {
+ expect_false(any(is.na(analysis_data$longitude)))
+ expect_true(all(analysis_data$longitude >= -79.65 & analysis_data$longitude <= -79.10))
+})
+User prompt: Is there no Source button in Rstudio if using the testthat package?
+Response: RStudio detects whether a file is a standalone script or a testing script based on how the file is named and structured.
+If your file is named starting with test- or test_ (e.g., test-simulated_data.R), RStudio automatically switches the toolbar:
+The standard Source button is replaced by a Run Tests button.
+Clicking Run Tests executes the file using testthat and opens the test results in the "Build" / "Tests" pane.
+How to run or source the file
+1. Click "Run Tests": Use the button that replaced "Source" in the top-right of the script editor.
+2. Use the keyboard shortcut: Press Ctrl + Shift + Enter (Windows/Linux) or Cmd + Shift + Enter (Mac) to source the entire active file,
+exactly as the Source button would.
+3. From the R Console: Run source("path/to/test-script.R") or testthat::test_file("path/to/test-script.R").
+4. Rename the file (if you want the Source button back): If the file does not start with test_ or test- (for instance, 01-
+test_simulated_data.R), RStudio will treat it as a regular R script and keep the standard Source button visible.
+User prompt: How to see where a specific test is failing
+Response: Here are the fastest, most effective ways to locate the exact line and data points causing a test failure in testthat:
+1. Run the test with test_file()
+Instead of generic sourcing, run the file directly through testthat::test_file() in your Console:
+testthat::test_file("path/to/your/test_file.R")
+testthat will print a failure summary showing:
+The description of the failing test_that() block.
+The exact file name and line number where the assertion failed.
+The difference between the expected and actual values (diff output).
+2. In RStudio's "Run Tests" / Build Pane
+If you clicked the Run Tests button:
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 4/17
+1. Look at the Build / Test pane at the top right/bottom right.
+2. Failing tests appear in red.
+3. Click the hyperlink or line reference next to the failure message—RStudio will jump directly to the failing line in your script editor.
+3. Diagnose Which Rows in Your Data Failed
+When a vectorized condition like all(analysis_data$latitude >= 43.55) fails, expect_true(all(...)) only tells you that at least one row
+failed—not which one.
+To find the offending rows immediately in your console:
+# Find rows where latitude is out of bounds or NA
+analysis_data |>
+ filter(latitude < 43.55 | latitude > 43.87 | is.na(latitude))
+# Find rows where longitude is out of bounds or NA
+analysis_data |>
+ filter(longitude < -79.65 | longitude > -79.10 | is.na(longitude))
+4. Interactive Debugging (browser())
+If you have a complex test_that() block and want to inspect variables at the moment of failure, insert browser() right before the failing
+expectation:
+test_that("coordinates fall within the expected bounding box", {
+ browser() # Pauses execution and opens an interactive debug prompt
+ expect_true(all(analysis_data$latitude >= 43.55 & analysis_data$latitude <= 43.87))
+})
+When you run the test, R will pause inside the test environment so you can run ad-hoc commands, check variables, and see why the expression
+evaluates to FALSE. Type Q to exit the debugger.
+User prompt: This is the test thats failing: test_that("'id' is unique and in strictly increasing sequential order", { expect_identical(cleaned_data$id,
+1:233) }) It says "Objects equal but not identical", but in the CSV file the IDs seem to be in sequential order
+Response: The error "Objects equal but not identical" means the numbers match, but their underlying data types (classes) differ.
+In R:
+1:233 generates a vector of type integer (typeof(1:233) is "integer").
+readr::read_csv() reads whole numbers as standard floating-point doubles/numeric by default (typeof(cleaned_data$id) is "double").
+expect_identical() requires both the values and the types to match perfectly, so comparing a double to an integer fails.
+Solutions
+Option 1: Use expect_equal() (Recommended)
+expect_equal() checks for numerical equivalence and ignores minor type differences like double vs integer:
+test_that("'id' is unique and in strictly increasing sequential order", {
+ expect_equal(cleaned_data$id, 1:233)
+})
+Option 2: Keep expect_identical() and cast to integer
+If you strictly want to enforce that both are integers:
+test_that("'id' is unique and in strictly increasing sequential order", {
+ expect_identical(as.integer(cleaned_data$id), 1:233)
+})
+Option 3: Read id as integer in read_csv
+Force read_csv to parse the id column directly as an integer when loading the data:
+cleaned_data <- read_csv(
+ "data/02-analysis_data/cleaned_data.csv",
+ col_types = cols(id = col_integer())
+)
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 5/17
+User prompt: Write code for a ggplot2 figure in R: Data -load data with read_csv(here("data", "analysis_data", "analysis_data.csv")) -233 rows, a
+single row is one park in one year of Toronto's blacklegged tick (BLT) surveillance -Columns: id (integer), park_locations (text), year (integer),
+blt_larvae (integer), blt_adults_and_nymphs (integer), total_blts (integer, number of ticks found in that park in that year), num_positive (integer),
+latitude (numeric), longitude (numeric). - Years: 2013 to 2019 and 2023, No surveillance in 2020, 2021, or 2022. - Approx. 76% of rows have
+total_blts equal to 0, with a maximum of 122. For the figure, - x-axis is the year, discrete catagory, show missing 2020, 2021, 2022 years as empty to
+visualize gap in surveillance - y-axis is total_blts (# ticks found) - Every row is one point, so all 233 points will be visible. Use geom_jitter to create
+horizontal jitter only, height should be 0. -Use seed of 853 -Use some transparency -No summary statistics, only raw data Only use ggplot2 Write the
+code as a Quarto code chunk -
+Response: ```{r}
+#| label: fig-tick-surveillance
+#| fig-cap: "Distribution of total blacklegged ticks collected per park across surveillance years in Toronto."
+#| warning: false
+#| message: false
+library(tidyverse)
+library(here)
+# Load the dataset
+analysis_data <- read_csv(here("data", "analysis_data", "analysis_data.csv"))
+# Convert year to factor with full levels from 2013 to 2023 to display gap years
+full_years <- as.character(2013:2023)
+plot_data <- analysis_data |>
+ mutate(year = factor(as.character(year), levels = full_years))
+# Plot raw points with horizontal jitter
+set.seed(853)
+ggplot(plot_data, aes(x = year, y = total_blts)) +
+ geom_jitter(
+ width = 0.25,
+ height = 0,
+ alpha = 0.45,
+ size = 2,
+ color = "darkred"
+ ) +
+ scale_x_discrete(drop = FALSE) +
+ labs(
+ x = "Surveillance Year",
+ y = "Total Blacklegged Ticks (BLTs)",
+ title = "Annual Blacklegged Tick Counts by Park in Toronto",
+ subtitle = "Points represent individual park surveillance records; note the 2020–2022 surveillance gap"
+ ) +
+ theme_minimal() +
+ theme(
+ panel.grid.minor = element_blank(),
+ axis.text.x = element_text(angle = 45, hjust = 1)
+ )
+### Key details included:
+- **Preserved empty years:** `factor(..., levels = full_years)` combined with `scale_x_discrete(drop = FALSE)` ensures 2
+- **Horizontal jitter only:** `geom_jitter(width = 0.25, height = 0)` prevents vertical distortion so true tick counts (
+- **Reproducibility:** `set.seed(853)` is evaluated immediately prior to plotting to ensure identical jitter placement e
+User prompt: Write code for a ggplot2 bar chart in R as a Quarto code chunk. Data is the same as before, assume its already loaded - total_blts is
+the number of adult and nymph ticks found. Larvae are recorded separately in blt_larvae, it is not included in total_blts. Figure -One bar per year -
+year is a discrete category on the x-axis, once again show 2020, 2021, and 2022 as empty as surveillance data was not recording during those years
+- y-axis is total_blts summed up for every year. Compute this from analysis_data - Make figure visually appealing without clutter
+Response: ```{r}
+#| label: fig-annual-total-ticks
+#| fig-cap: "Total adult and nymph blacklegged ticks collected per year across all surveyed parks in Toronto."
+#| warning: false
+#| message: false
+# Aggregate total ticks by year and retain all years 2013-2023
+annual_ticks <- analysis_data |>
+ group_by(year) |>
+ summarize(sum_blts = sum(total_blts, na.rm = TRUE), .groups = "drop") |>
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 6/17
+ complete(
+ year = 2013:2023,
+ fill = list(sum_blts = NA)
+ ) |>
+ mutate(year = factor(year, levels = 2013:2023))
+# Plot bar chart
+ggplot(annual_ticks, aes(x = year, y = sum_blts)) +
+ geom_col(
+ fill = "#2c7bb6",
+ width = 0.65,
+ na.rm = TRUE
+ ) +
+ geom_text(
+ aes(label = ifelse(is.na(sum_blts), "", scales::comma(sum_blts))),
+ vjust = -0.5,
+ size = 3.3,
+ color = "grey20"
+ ) +
+ scale_x_discrete(drop = FALSE) +
+ scale_y_continuous(
+ expand = expansion(mult = c(0, 0.12)),
+ labels = scales::comma
+ ) +
+ labs(
+ x = "Year",
+ y = "Total Blacklegged Ticks (Adults & Nymphs)",
+ title = "Annual Total Blacklegged Ticks Collected in Toronto Parks",
+ subtitle = "Surveillance was suspended during 2020–2022"
+ ) +
+ theme_minimal(base_size = 12) +
+ theme(
+ panel.grid.minor = element_blank(),
+ panel.grid.major.x = element_blank(),
+ axis.line.x = element_line(color = "grey60", linewidth = 0.4),
+ plot.title = element_text(face = "bold", size = 13),
+ plot.subtitle = element_text(color = "grey35", margin = margin(b = 10))
+ )
+### Highlights of the implementation:
+- **Explicit timeline completeness:** Uses `tidyr::complete(year = 2013:2023, fill = list(sum_blts = NA))` together with
+- **Direct data labeling:** `geom_text()` cleanly displays count values atop each bar, removing the need for dense y-axi
+- **De-cluttered aesthetic:** Removes vertical grid lines (`panel.grid.major.x = element_blank()`) and anchors bars clea
+User prompt: Write code for a ggplot2 line chart in R as a Quarto code chunk. Data is the same as before, assume its already loaded Figure -Line
+chart with a point for every year showing percentage of ticks found that tested positive - Compute for each year: percent positive = (sum of
+num_positive) / (sum of blt_adults_and_nymphs) * 100 -Sum first and then divide -Drop 2013 and 2014 from the figure - x-axis has year as discrete
+category, showing 2015 to 2023 (2020, 2021, 2022 should appear empty) -y-axis is percent positive, axis labels as percentages -Have the actual
+number of ticks tested positive somewhere around each point, like (N=10)
+Response: ```{r}
+#| label: fig-positivity-rate
+#| fig-cap: "Annual blacklegged tick positivity rate across Toronto parks (2015–2023), with the number of positive ticks
+#| warning: false
+#| message: false
+# Calculate annual positivity rates and complete timeline for 2015-2023
+positivity_data <- analysis_data |>
+ filter(year >= 2015) |>
+ group_by(year) |>
+ summarize(
+ total_positive = sum(num_positive, na.rm = TRUE),
+ total_tested = sum(blt_adults_and_nymphs, na.rm = TRUE),
+ .groups = "drop"
+ ) |>
+ mutate(
+ pct_positive = (total_positive / total_tested) * 100
+ ) |>
+ complete(
+ year = 2015:2023,
+ fill = list(pct_positive = NA, total_positive = NA)
+ ) |>
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 7/17
+ mutate(
+ year_factor = factor(year, levels = 2015:2023)
+ )
+# Plot line chart
+ggplot(positivity_data, aes(x = year_factor, y = pct_positive, group = 1)) +
+ geom_line(
+ color = "#d95f02",
+ linewidth = 0.9,
+ na.rm = TRUE
+ ) +
+ geom_point(
+ color = "#d95f02",
+ size = 2.8,
+ na.rm = TRUE
+ ) +
+ geom_text(
+ aes(label = ifelse(is.na(total_positive), "", paste0("(N=", total_positive, ")"))),
+ vjust = -1.2,
+ size = 3.2,
+ color = "grey25",
+ na.rm = TRUE
+ ) +
+ scale_x_discrete(drop = FALSE) +
+ scale_y_continuous(
+ labels = scales::label_percent(scale = 1),
+ expand = expansion(mult = c(0.05, 0.18))
+ ) +
+ labs(
+ x = "Surveillance Year",
+ y = "Positivity Rate (%)",
+ title = "Annual Blacklegged Tick Positivity Rate in Toronto Parks",
+ subtitle = "Percentage of adult and nymph ticks testing positive; (N = count of positive ticks)"
+ ) +
+ theme_minimal(base_size = 12) +
+ theme(
+ panel.grid.minor = element_blank(),
+ panel.grid.major.x = element_blank(),
+ axis.line.x = element_line(color = "grey60", linewidth = 0.4),
+ plot.title = element_text(face = "bold", size = 13),
+ plot.subtitle = element_text(color = "grey35", margin = margin(b = 10))
+ )
+User prompt: Write code for a ggplot2 figure in R as a Quarto code chunk. Data is the same as before, assume its already loaded - Latitude is about
+43.60 to 43.82 and longitude is about -79.61 to -79.15 Figure -scatter plot in the shape of a map, x is longitude and y is latitude
+Response: ```{r}
+#| label: fig-park-map
+#| fig-cap: "Geographic distribution of blacklegged tick surveillance locations across Toronto parks."
+#| warning: false
+#| message: false
+# Aggregate unique park locations with their total ticks and coordinates
+park_summary <- analysis_data |>
+ group_by(park_locations, latitude, longitude) |>
+ summarize(
+ total_blts_all_years = sum(total_blts, na.rm = TRUE),
+ .groups = "drop"
+ )
+# Scatter plot using geographic coordinates
+ggplot(park_summary, aes(x = longitude, y = latitude)) +
+ geom_point(
+ aes(size = total_blts_all_years, color = total_blts_all_years),
+ alpha = 0.75
+ ) +
+ scale_color_viridis_c(
+ option = "plasma",
+ trans = "pseudo_log",
+ name = "Total BLTs"
+ ) +
+ scale_size_continuous(
+ range = c(2, 6),
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 8/17
+ name = "Total BLTs"
+ ) +
+ guides(
+ color = guide_legend(),
+ size = guide_legend()
+ ) +
+ coord_quickmap(
+ xlim = c(-79.62, -79.14),
+ ylim = c(43.59, 43.83)
+ ) +
+ labs(
+ x = "Longitude (°W)",
+ y = "Latitude (°N)",
+ title = "Blacklegged Tick Surveillance Locations in Toronto",
+ subtitle = "Point size and color indicate cumulative ticks collected across all surveillance years"
+ ) +
+ theme_minimal(base_size = 12) +
+ theme(
+ panel.grid.minor = element_blank(),
+ panel.background = element_rect(fill = "#fcfcfc", color = NA),
+ plot.title = element_text(face = "bold", size = 13),
+ plot.subtitle = element_text(color = "grey35", margin = margin(b = 10)),
+ legend.position = "right"
+ )
+### Key Elements:
+- **Spatial Aspect Ratio (`coord_quickmap`)**: Preserves accurate spatial proportions between degrees of latitude and lo
+- **Aggregation by Park**: Groups coordinates by `park_locations` so overlapping annual points don't create overplotting
+- **Logarithmic Color Scale (`pseudo_log`)**: Handles the ~76% zeros while still highlighting hot spots that reached up
+User prompt: is there a way to put this over an actual map of toronto
+Response: Yes, there are two primary ways to do this in R depending on whether you want a static publication-ready map or an interactive leaflet
+map.
+Option 1: Static Map with ggspatial + OpenStreetMap (Recommended for Quarto/PDF/Word)
+The ggspatial and sf packages allow you to download background map tiles (like OpenStreetMap or CartoDB Positron) directly beneath your
+ggplot2 layers without needing an API key.
+First, install the spatial helpers if you haven't already:
+install.packages(c("sf", "ggspatial"))
+Then use this Quarto chunk:
+```{r}
+#| label: fig-toronto-basemap
+#| fig-cap: "Blacklegged tick surveillance locations overlaid on a Toronto basemap."
+#| warning: false
+#| message: false
+library(tidyverse)
+library(sf)
+library(ggspatial)
+# 1. Summarize points per park location
+park_summary <- analysis_data |>
+ group_by(park_locations, latitude, longitude) |>
+ summarize(
+ total_blts_all_years = sum(total_blts, na.rm = TRUE),
+ .groups = "drop"
+ )
+# 2. Convert to an sf spatial points object (WGS84 / EPSG:4326)
+park_sf <- st_as_sf(
+ park_summary,
+ coords = c("longitude", "latitude"),
+ crs = 4326
+)
+# 3. Plot over an OpenStreetMap basemap
+ggplot() +
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 9/17
+ annotation_map_tile(type = "cartolight", zoomin = 0) +
+ geom_sf(
+ data = park_sf,
+ aes(size = total_blts_all_years, color = total_blts_all_years),
+ alpha = 0.8
+ ) +
+ scale_color_viridis_c(
+ option = "plasma",
+ trans = "pseudo_log",
+ name = "Total BLTs"
+ ) +
+ scale_size_continuous(
+ range = c(2.5, 7),
+ name = "Total BLTs"
+ ) +
+ coord_sf(
+ xlim = c(-79.62, -79.14),
+ ylim = c(43.58, 43.85),
+ expand = FALSE,
+ crs = 4326
+ ) +
+ annotation_scale(location = "bl", width_hint = 0.25) +
+ annotation_north_arrow(
+ location = "tr",
+ which_north = "true",
+ style = north_arrow_minimal
+ ) +
+ labs(
+ title = "Blacklegged Tick Surveillance Locations in Toronto",
+ subtitle = "Cumulative tick counts overlaid on Carto Light base map",
+ caption = "Map tiles by CartoDB, under CC BY 3.0. Data by OpenStreetMap"
+ ) +
+ theme_minimal() +
+ theme(
+ axis.title = element_blank(),
+ plot.title = element_text(face = "bold", size = 13),
+ plot.subtitle = element_text(color = "grey35")
+ )
+---
+### Option 2: Interactive Web Map with `leaflet` (Best for HTML Quarto documents)
+If you are rendering your Quarto report to **HTML**, `leaflet` provides a zoomable, pannable, interactive map where read
+```qmd
+```{r}
+#| label: fig-toronto-leaflet
+#| fig-cap: "Interactive map of blacklegged tick surveillance in Toronto."
+#| warning: false
+#| message: false
+library(leaflet)
+library(dplyr)
+park_summary <- analysis_data |>
+ group_by(park_locations, latitude, longitude) |>
+ summarize(
+ total_blts_all_years = sum(total_blts, na.rm = TRUE),
+ .groups = "drop"
+ )
+# Color palette mapped to counts
+pal <- colorNumeric(
+ palette = "YlOrRd",
+ domain = park_summary$total_blts_all_years
+)
+leaflet(park_summary) |>
+ addProviderTiles(providers$CartoDB.Positron) |>
+ setView(lng = -79.3832, lat = 43.71, zoom = 11) |>
+ addCircleMarkers(
+ lng = ~longitude,
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 10/17
+ lat = ~latitude,
+ radius = ~sqrt(total_blts_all_years + 1) * 2.5,
+ color = ~pal(total_blts_all_years),
+ fillOpacity = 0.8,
+ stroke = TRUE,
+ weight = 1,
+ popup = ~paste0(
+ "<strong>", park_locations, "</strong><br/>",
+ "Total BLTs: ", total_blts_all_years
+ )
+ ) |>
+ addLegend(
+ "bottomright",
+ pal = pal,
+ values = ~total_blts_all_years,
+ title = "Total BLTs",
+ opacity = 1
+ )
+User prompt: Write code for a ggplot2 figure in R as a Quarto code chunk. Data is the same as before, assume its already loaded - Latitude is about
+43.60 to 43.82 and longitude is about -79.61 to -79.15 Figure -scatter plot in the shape of a map, x is longitude and y is latitude -Show parks where
+no ticks were found as hollow grey circles, and use dark red circles for sites where ticks were found -Add up the number of ticks found per site over
+all years, add caption that says each dot is a summary over all years -dot size should represent number of ticks found. add transparency for
+overlapping dots
+Response: ```{r}
+#| label: fig-toronto-ticks-map
+#| fig-cap: "Geographic distribution of blacklegged tick surveillance sites in Toronto. Each dot represents a park summa
+#| warning: false
+#| message: false
+# Aggregate total ticks found per site across all surveillance years
+park_summary <- analysis_data |>
+ group_by(park_locations, latitude, longitude) |>
+ summarize(
+ total_ticks = sum(total_blts, na.rm = TRUE),
+ .groups = "drop"
+ ) |>
+ mutate(
+ tick_presence = ifelse(total_ticks == 0, "No Ticks Found", "Ticks Found")
+ )
+# Split data into zero-count sites and positive-count sites
+zero_parks <- park_summary |> filter(total_ticks == 0)
+pos_parks <- park_summary |> filter(total_ticks > 0)
+# Plot geographic scatter
+ggplot() +
+ # Hollow grey circles for sites with 0 ticks
+ geom_point(
+ data = zero_parks,
+ aes(x = longitude, y = latitude),
+ shape = 1, # Hollow circle
+ color = "grey55",
+ size = 2.5,
+ stroke = 0.8,
+ alpha = 0.6
+ ) +
+ # Sized, dark red circles for sites where ticks were detected
+ geom_point(
+ data = pos_parks,
+ aes(x = longitude, y = latitude, size = total_ticks),
+ shape = 16, # Solid circle
+ color = "#8b0000", # Dark red
+ alpha = 0.55
+ ) +
+ scale_size_continuous(
+ range = c(2.5, 9),
+ breaks = c(1, 10, 25, 50, 100),
+ name = "Ticks Detected"
+ ) +
+ coord_quickmap(
+ xlim = c(-79.62, -79.14),
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 11/17
+ ylim = c(43.59, 43.83)
+ ) +
+ labs(
+ x = "Longitude (°W)",
+ y = "Latitude (°N)",
+ title = "Blacklegged Tick Surveillance Sites Across Toronto Parks",
+ subtitle = "Hollow grey circles denote zero detections; red circles indicate tick presence",
+ caption = "Note: Each dot represents a park summary aggregated over all surveillance years."
+ ) +
+ theme_minimal(base_size = 12) +
+ theme(
+ panel.grid.minor = element_blank(),
+ panel.background = element_rect(fill = "#fafafa", color = NA),
+ plot.title = element_text(face = "bold", size = 13),
+ plot.subtitle = element_text(color = "grey35", margin = margin(b = 10)),
+ plot.caption = element_text(face = "italic", color = "grey40", size = 9, margin = margin(t = 10)),
+ legend.position = "right"
+ )
+User prompt: the largest number of ticks found in a row is 122, so the legend should show a circle for 150 ticks
+Response: ```{r}
+#| label: fig-toronto-ticks-map
+#| fig-cap: "Geographic distribution of blacklegged tick surveillance sites in Toronto. Each dot represents a park summa
+#| warning: false
+#| message: false
+# Aggregate total ticks found per site across all surveillance years
+park_summary <- analysis_data |>
+ group_by(park_locations, latitude, longitude) |>
+ summarize(
+ total_ticks = sum(total_blts, na.rm = TRUE),
+ .groups = "drop"
+ )
+# Split data into zero-count sites and positive-count sites
+zero_parks <- park_summary |> filter(total_ticks == 0)
+pos_parks <- park_summary |> filter(total_ticks > 0)
+# Plot geographic scatter
+ggplot() +
+ # Hollow grey circles for sites with 0 ticks
+ geom_point(
+ data = zero_parks,
+ aes(x = longitude, y = latitude),
+ shape = 1, # Hollow circle
+ color = "grey55",
+ size = 2.5,
+ stroke = 0.8,
+ alpha = 0.6
+ ) +
+ # Sized, dark red circles for sites where ticks were detected
+ geom_point(
+ data = pos_parks,
+ aes(x = longitude, y = latitude, size = total_ticks),
+ shape = 16, # Solid circle
+ color = "#8b0000", # Dark red
+ alpha = 0.55
+ ) +
+ scale_size_continuous(
+ limits = c(1, 150),
+ breaks = c(1, 25, 50, 100, 150),
+ range = c(2.5, 9),
+ name = "Ticks Detected"
+ ) +
+ coord_quickmap(
+ xlim = c(-79.62, -79.14),
+ ylim = c(43.59, 43.83)
+ ) +
+ labs(
+ x = "Longitude (°W)",
+ y = "Latitude (°N)",
+ title = "Blacklegged Tick Surveillance Sites Across Toronto Parks",
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 12/17
+ subtitle = "Hollow grey circles denote zero detections; red circles indicate tick presence",
+ caption = "Note: Each dot is a summary over all years."
+ ) +
+ theme_minimal(base_size = 12) +
+ theme(
+ panel.grid.minor = element_blank(),
+ panel.background = element_rect(fill = "#fafafa", color = NA),
+ plot.title = element_text(face = "bold", size = 13),
+ plot.subtitle = element_text(color = "grey35", margin = margin(b = 10)),
+ plot.caption = element_text(face = "italic", color = "grey40", size = 9, margin = margin(t = 10)),
+ legend.position = "right"
+ )
+### What changed:
+- **`limits = c(1, 150)`**: Explicitly expands the upper bound of the size scale beyond the data maximum (122) to 150.
+- **`breaks = c(1, 25, 50, 100, 150)`**: Adds a reference guide point at 150 directly in the legend.
+User prompt: Now make a horizontal bar chart of total ticks by park, only show the parks that have had at least one tick.
+Response: ```{r}
+#| label: fig-ticks-by-park
+#| fig-cap: "Cumulative blacklegged ticks collected across surveillance years for parks with at least one detection."
+#| fig-height: 7
+#| warning: false
+#| message: false
+# Aggregate total ticks per park, filter for >= 1, and order by count
+park_tick_counts <- analysis_data |>
+ group_by(park_locations) |>
+ summarize(
+ total_ticks = sum(total_blts, na.rm = TRUE),
+ .groups = "drop"
+ ) |>
+ filter(total_ticks >= 1) |>
+ mutate(
+ park_locations = fct_reorder(park_locations, total_ticks)
+ )
+# Horizontal bar chart
+ggplot(park_tick_counts, aes(x = total_ticks, y = park_locations)) +
+ geom_col(
+ fill = "#8b0000",
+ width = 0.7
+ ) +
+ geom_text(
+ aes(label = scales::comma(total_ticks)),
+ hjust = -0.2,
+ size = 3.2,
+ color = "grey20"
+ ) +
+ scale_x_continuous(
+ expand = expansion(mult = c(0, 0.12)),
+ labels = scales::comma
+ ) +
+ labs(
+ x = "Total Blacklegged Ticks (Adults & Nymphs)",
+ y = NULL,
+ title = "Total Blacklegged Tick Detections by Toronto Park",
+ subtitle = "Aggregated across all surveillance years; parks with zero detections excluded",
+ caption = "Data: Toronto Public Health Blacklegged Tick Surveillance"
+ ) +
+ theme_minimal(base_size = 11) +
+ theme(
+ panel.grid.minor = element_blank(),
+ panel.grid.major.y = element_blank(),
+ axis.line.x = element_line(color = "grey60", linewidth = 0.4),
+ axis.text.y = element_text(size = 9, color = "grey15"),
+ plot.title = element_text(face = "bold", size = 13),
+ plot.subtitle = element_text(color = "grey35", margin = margin(b = 10)),
+ plot.caption = element_text(color = "grey40", size = 8, margin = margin(t = 10))
+ )
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 13/17
+### Highlights:
+- **`filter(total_ticks >= 1)`**: Drops all ~76% zero-count records.
+- **`fct_reorder(park_locations, total_ticks)`**: Automatically sorts the parks from highest count at the top to lowest
+- **`#| fig-height: 7`**: Increases vertical canvas height in Quarto so the park names don't overlap on the y-axis.
+- **Direct value labels**: `geom_text(hjust = -0.2)` adds the exact counts at the end of each bar for easy reading.
+User prompt: only show top 10 parks actually
+Response: ```{r}
+#| label: fig-top10-parks
+#| fig-cap: "Top 10 Toronto parks with the highest cumulative blacklegged tick counts across all surveillance years."
+#| fig-height: 5
+#| warning: false
+#| message: false
+# Aggregate ticks per park, filter for top 10, and sort ascending for horizontal display
+top10_parks <- analysis_data |>
+ group_by(park_locations) |>
+ summarize(
+ total_ticks = sum(total_blts, na.rm = TRUE),
+ .groups = "drop"
+ ) |>
+ filter(total_ticks >= 1) |>
+ slice_max(order_by = total_ticks, n = 10) |>
+ mutate(
+ park_locations = fct_reorder(park_locations, total_ticks)
+ )
+# Horizontal bar chart
+ggplot(top10_parks, aes(x = total_ticks, y = park_locations)) +
+ geom_col(
+ fill = "#8b0000",
+ width = 0.65
+ ) +
+ geom_text(
+ aes(label = scales::comma(total_ticks)),
+ hjust = -0.2,
+ size = 3.5,
+ color = "grey20"
+ ) +
+ scale_x_continuous(
+ expand = expansion(mult = c(0, 0.12)),
+ labels = scales::comma
+ ) +
+ labs(
+ x = "Total Blacklegged Ticks (Adults & Nymphs)",
+ y = NULL,
+ title = "Top 10 Toronto Parks by Blacklegged Tick Counts",
+ subtitle = "Aggregated across all surveillance years (2013–2019, 2023)",
+ caption = "Data: Toronto Public Health Blacklegged Tick Surveillance"
+ ) +
+ theme_minimal(base_size = 12) +
+ theme(
+ panel.grid.minor = element_blank(),
+ panel.grid.major.y = element_blank(),
+ axis.line.x = element_line(color = "grey60", linewidth = 0.4),
+ axis.text.y = element_text(size = 10, face = "bold", color = "grey20"),
+ plot.title = element_text(face = "bold", size = 13),
+ plot.subtitle = element_text(color = "grey35", margin = margin(b = 10)),
+ plot.caption = element_text(color = "grey40", size = 8, margin = margin(t = 10))
+ )
+User prompt: This is my script to download the dataset from OpenToronto: #### Preamble #### # Purpose: Downloads and saves the Blacklegged
+Tick surveillance data # from Open Data Toronto # Author: Shrey Sati # Date: 26 September 2026 # Contact: shrey.sati@mail.utoronto.ca # License:
+MIT # Pre-requisites: # - The `opendatatoronto`, 'dplyr', and 'readr' packages must be installed and loaded # Any other information needed? N/A
+#### Workspace setup #### library(opendatatoronto) library(dplyr) library(readr) # Get all resources for this package resources <-
+list_package_resources("78c88292-5375-4373-a687-788a5ff19077") # Identify datastore resources datastore_resources <- filter(resources,
+tolower(format) %in% c('csv', 'geojson')) raw_data <- resources |> filter(name == "BLT Active Surveillance Results") |> get_resource() #### Save
+data #### write_csv(raw_data, file = "data/01-raw_data/raw_data.csv") Please also download the City of Toronto outline using the
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 14/17
+opendatatoronto package. Package ID "841fb820-46d0-46ac-8dcb-d20f27e57bcc", resource named "toronto-boundary-wgs84". Choose the
+resource by name, then save it with sf::st_write() to data/01-raw_data/toronto_boundary.gpkg.
+Response: #### Preamble ####
+# Purpose: Downloads and saves the Blacklegged Tick surveillance data
+# and the City of Toronto boundary from Open Data Toronto.
+# Author: Shrey Sati
+# Date: 26 September 2026
+# Contact: shrey.sati@mail.utoronto.ca
+# License: MIT
+# Pre-requisites:
+ # - The `opendatatoronto`, `dplyr`, `readr`, and `sf` packages must be installed and loaded
+# Any other information needed? N/A
+#### Workspace setup ####
+library(opendatatoronto)
+library(dplyr)
+library(readr)
+library(sf)
+#### Download Blacklegged Tick Data ####
+# Get all resources for this package
+blt_resources <- list_package_resources("78c88292-5375-4373-a687-788a5ff19077")
+# Identify datastore resources
+blt_datastore_resources <- filter(blt_resources, tolower(format) %in% c('csv', 'geojson'))
+raw_data <-
+ blt_resources |>
+ filter(name == "BLT Active Surveillance Results") |>
+ get_resource()
+#### Download Toronto Boundary Data ####
+boundary_resources <- list_package_resources("841fb820-46d0-46ac-8dcb-d20f27e57bcc")
+toronto_boundary <-
+ boundary_resources |>
+ filter(name == "toronto-boundary-wgs84") |>
+ get_resource()
+#### Save data ####
+# Save the BLT dataset
+write_csv(raw_data, file = "data/01-raw_data/raw_data.csv")
 
-User
-Can you make a generic fun background rectangular image with the only text being "STA302"
-ChatGPT
-
-Generated by DALL·E
-Here is a fun and engaging background image featuring the text "STA302". The design incorporates colorful and dynamic elements suitable for the theme.
-
-User
-It doesn't say "STA302"
-ChatGPT
-
-Generated by DALL·E
-Here is the revised image with the text "STA302" prominently displayed.
-
-User
-No. It doesn't say "STA302"
-ChatGPT
-
-Generated by DALL·E
-Here's the image with the text "STA302" as requested.
-
-User
-Again. It doesn't say "STA302"
-
-ChatGPT
-
-Generated by DALL·E
-Here is the image with the text "STA302" prominently displayed.
+# Save the Toronto boundary as a GeoPackage (overwriting if it already exists)
+st_write(toronto_boundary, "data/01-raw_data/toronto_boundary.gpkg", delete_dsn = TRUE)
+User prompt: Ok now read the saved .gpkg with sf::read_sf() and here(), and draw it underneath the points with geom_sf() (i want a light grey fill, thin
+grey border). Replace coord_quickmap() with coord_sf() - Use breaks 10, 50, 200. - Red circles with a thin white outline and small circles drawn on
+top - Small hollow grey circles for sites with zero ticks - add labels for Rouge Valley, Toronto Islands, Downtown and Lake Ontario - donot add title
+inside the plot also only Use the base pipe (|>) -don't read anything from the internet inside the Quarto doc ```{r} #| label: fig-toronto-ticks-map #| figcap: "Geographic distribution of blacklegged tick surveillance sites in Toronto. Each dot represents a park summary aggregated over all surveillance
+years." #| echo: false #| warning: false #| message: false # Aggregate total ticks found per site across all surveillance years park_summary <-
+analysis_data |> group_by(park_locations, latitude, longitude) |> summarize( total_ticks = sum(total_blts, na.rm = TRUE), .groups = "drop"
+) # Split data into zero-count sites and positive-count sites zero_parks <- park_summary |> filter(total_ticks == 0) pos_parks <- park_summary |>
+filter(total_ticks > 0) # Plot geographic scatter ggplot() + # Hollow grey circles for sites with 0 ticks geom_point( data = zero_parks, aes(x =
+longitude, y = latitude), shape = 1, # Hollow circle color = "grey55", size = 2.5, stroke = 0.8, alpha = 0.6 ) + # Sized, dark red
+circles for sites where ticks were detected geom_point( data = pos_parks, aes(x = longitude, y = latitude, size = total_ticks), shape = 16,
+# Solid circle color = "#8b0000", # Dark red alpha = 0.55 ) + scale_size_continuous( limits = c(1, 150), breaks = c(1, 25, 50, 100, 150),
+ range = c(2.5, 9), name = "Ticks Collected" ) + coord_quickmap( xlim = c(-79.62, -79.14), ylim = c(43.59, 43.83) ) + labs( x =
+"Longitude (°W)", y = "Latitude (°N)" ) + theme_minimal(base_size = 12) + theme( panel.grid.minor = element_blank(), panel.background
+= element_rect(fill = "#fafafa", color = NA), legend.position = "right" ) ```
+Response: ```{r}
+#| label: fig-toronto-ticks-map
+#| fig-cap: "Geographic distribution of blacklegged tick surveillance sites in Toronto. Each dot represents a park summa
+#| echo: false
+#| warning: false
+#| message: false
+library(tidyverse)
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 15/17
+library(sf)
+library(here)
+# Read the local geographic boundary file
+toronto_boundary <- read_sf(here("data", "01-raw_data", "toronto_boundary.gpkg"))
+# Aggregate total ticks found per site across all surveillance years
+park_summary <- analysis_data |>
+ group_by(park_locations, latitude, longitude) |>
+ summarize(
+ total_ticks = sum(total_blts, na.rm = TRUE),
+ .groups = "drop"
+ )
+# Split data into zero-count sites and positive-count sites
+zero_parks <- park_summary |> filter(total_ticks == 0)
+pos_parks <- park_summary |> filter(total_ticks > 0)
+# Plot geographic map
+ggplot() +
+ # 1. Base map of Toronto boundary (drawn first so it stays underneath)
+ geom_sf(
+ data = toronto_boundary,
+ fill = "lightgrey",
+ color = "grey",
+ linewidth = 0.3
+ ) +
+ # 2. Small hollow grey circles for sites with 0 ticks
+ geom_point(
+ data = zero_parks,
+ aes(x = longitude, y = latitude),
+ shape = 1, # Hollow circle
+ color = "grey55",
+ size = 2.5,
+ stroke = 0.8,
+ alpha = 0.6
+ ) +
+ # 3. Sized, red circles with a thin white outline for detected ticks
+ geom_point(
+ data = pos_parks,
+ aes(x = longitude, y = latitude, size = total_ticks),
+ shape = 21, # Shape 21 allows both fill (interior) and color (border)
+ fill = "#8b0000",
+ color = "white", # Thin white outline
+ stroke = 0.6,
+ alpha = 0.75
+ ) +
+ # 4. Small circles drawn on top of the red circles
+ geom_point(
+ data = pos_parks,
+ aes(x = longitude, y = latitude),
+ shape = 16,
+ color = "white",
+ size = 0.8,
+ alpha = 0.9
+ ) +
+ # 5. Geographic text labels
+ annotate("text", x = -79.18, y = 43.82, label = "Rouge Valley", size = 3.5, fontface = "italic", color = "grey20") +
+ annotate("text", x = -79.38, y = 43.615, label = "Toronto Islands", size = 3.5, fontface = "italic", color = "grey20")
+ annotate("text", x = -79.38, y = 43.655, label = "Downtown", size = 3.5, fontface = "bold", color = "grey20") +
+ annotate("text", x = -79.45, y = 43.585, label = "Lake Ontario", size = 4.5, fontface = "italic", color = "steelblue")
+ # 6. Scales and Coordinate system
+ scale_size_continuous(
+ breaks = c(10, 50, 200),
+ range = c(2.5, 9),
+ name = "Ticks Collected"
+ ) +
+ coord_sf(
+ xlim = c(-79.62, -79.14),
+ ylim = c(43.57, 43.85), # Expanded slightly to fit Lake Ontario label
+ expand = FALSE
+ ) +
+ labs(
+ x = "Longitude (°W)",
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 16/17
+ y = "Latitude (°N)"
+ # Title intentionally omitted per instructions
+ ) +
+ theme_minimal(base_size = 12) +
+ theme(
+ panel.grid.minor = element_blank(),
+ panel.background = element_rect(fill = "#fafafa", color = NA),
+ legend.position = "right"
+ )
+User prompt: using tinytable, create a table chunk that summarises my tick surveillance data by year. the data is the same and has already been
+loaded. Requirements: - I wnat one row per year - put columns in this order: Year | Parks surveyed (number of rows) | Parks with ticks (total_blts > 0)
+| Adults and nymphs (sum) | Larvae (sum) | Tested positive (sum of num_positive) | Share positive (%) (positive / adults and nymphs × 100, to one
+decimal place) - use tinytable only - Use thousands separators and the percentage with 1 decimal place. - Use the base pipe don't add library() calls
+Response: ```{r}
+#| label: tbl-annual-tick-summary
+#| tbl-cap: "Annual summary of blacklegged tick surveillance data in Toronto"
+#| warning: false
+#| message: false
+# Summarize the data by year
+summary_table <- analysis_data |>
+ group_by(year) |>
+ summarize(
+ `Parks surveyed` = n(),
+ `Parks with ticks` = sum(total_blts > 0, na.rm = TRUE),
+ `Adults and nymphs` = sum(blt_adults_and_nymphs, na.rm = TRUE),
+ `Larvae` = sum(blt_larvae, na.rm = TRUE),
+ `Tested positive` = sum(num_positive, na.rm = TRUE),
+ .groups = "drop"
+ ) |>
+ mutate(
+ `Share positive (%)` = (`Tested positive` / `Adults and nymphs`) * 100
+ ) |>
+ rename(Year = year)
+# Generate the tinytable with formatting
+tt(summary_table) |>
+ format_tt(j = c("Parks surveyed", "Parks with ticks", "Adults and nymphs", "Larvae", "Tested positive"), num_mark = ",
+ format_tt(j = "Share positive (%)", digits = 1)
+User prompt: Create a table in R based on the same data Requirements: - 1 row per variable, labelled "Adults and nymphs", "Larvae" and "Tested
+positive" - columns in this order: Variable | Mean | Median | Standard deviation | Maximum | Total | Surveys above zero (number of rows where the
+count is greater than zero). - use tinytable only - Mean and Standard deviation should be to exactly 2 decimal places - Median, Maximum, Total and
+Surveys above zero = whole numbers with thousands separators - use the base pipe |> only, no library calls
+Response: ```{r}
+#| label: tbl-tick-variable-summary
+#| tbl-cap: "Summary statistics for blacklegged tick surveillance metrics across all park surveys"
+#| warning: false
+#| message: false
+# Calculate summary statistics per variable
+calc_stats <- function(x, label) {
+ data.frame(
+ Variable = label,
+ Mean = mean(x, na.rm = TRUE),
+ Median = median(x, na.rm = TRUE),
+ `Standard deviation` = sd(x, na.rm = TRUE),
+ Maximum = max(x, na.rm = TRUE),
+ Total = sum(x, na.rm = TRUE),
+ `Surveys above zero` = sum(x > 0, na.rm = TRUE),
+ check.names = FALSE
+ )
+}
+variable_summary <- rbind(
+ calc_stats(analysis_data$blt_adults_and_nymphs, "Adults and nymphs"),
+ calc_stats(analysis_data$blt_larvae, "Larvae"),
+ calc_stats(analysis_data$num_positive, "Tested positive")
+28/09/2026, 23:04 Extracting Coordinates in R Using Regex
+https://gemini.google.com/u/6/app/0b3ccdf9d87342a8?pageId=none 17/17
+)
+# Render formatted tinytable
+tt(variable_summary) |>
+ format_tt(j = c("Mean", "Standard deviation"), digits = 2) |>
+ format_tt(j = c("Median", "Maximum", "Total", "Surveys above zero"), digits = 0, num_mark = ",")
