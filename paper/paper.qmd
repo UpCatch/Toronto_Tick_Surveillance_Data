@@ -259,7 +259,7 @@ tt(summary_table, width = 1) |>
   style_tt(j = 2:7, align = "r")
 ```
 
-## Ticks found each survey
+## Most surveys found no ticks
 Looking at all 233 surveys, 176 (76%) of them found no blacklegged ticks
 (@fig-tick-surveillance). While the average survey found 2.6 ticks, this is inflated
 by some sites having much larger counts (e.g., Rouge Park in 2017 with 122 ticks found).
@@ -307,7 +307,7 @@ laid by fed adult females [@eisen2016], which could suggest that ticks were repr
 at those sites. Larvae are not tested and are not part of the total tick count,
 so we exclude them from the figures that follow.
 
-## Location of found ticks
+## Ticks are concentrated in the east
 
 The majority of ticks were on the east side of Toronto (@fig-toronto-ticks-map).
 Sites that were east of longitude 79.25°W produced around 88% of all collected ticks.
@@ -452,7 +452,7 @@ ggplot(top10_parks, aes(x = total_ticks, y = park_locations)) +
   )
 ```
 
-## Ticks that tested positive
+## Infected ticks are concentrated in large catches
 
 Of all 606 adults and nymphs collected, 35% or 211 ticks tested positive for the
 *Borrelia burgdorferi* bacterium, compared with 27.4% collected by dragging across
@@ -512,6 +512,7 @@ show no steady trend in this regard. This reflects the literature: the spread of
 coincided with warming, but no change in exposure has yet been conclusively linked
 to climate change [@eisen2016].
 
+\newpage
 
 # References
 
