@@ -1,12 +1,12 @@
 #### Preamble ####
-# Purpose: Tests the simulated Toronto blacklegged tick (BLT) surveillance data 
+# Purpose: Tests the simulated Toronto blacklegged tick (BLT) surveillance data
 # Author: Shrey Sati
 # Date: 26 September 2026
 # Contact: shrey.sati@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: 
-  # - The `tidyverse` package must be installed and loaded
-  # - 00-simulate_data.R must have been run
+# Pre-requisites:
+# - The `tidyverse` package must be installed and loaded
+# - 00-simulate_data.R must have been run
 # Any other information needed? N/A
 
 

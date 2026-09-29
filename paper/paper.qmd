@@ -234,8 +234,8 @@ tick count in Toronto.
 #| message: false
 
 # Summarize the data by year
-summary_table <- analysis_data |> 
-  group_by(year) |> 
+summary_table <- analysis_data |>
+  group_by(year) |>
   summarize(
     `Parks surveyed` = n(),
     `Parks with ticks` = sum(total_blts > 0, na.rm = TRUE),
@@ -243,19 +243,19 @@ summary_table <- analysis_data |>
     `Larvae` = sum(blt_larvae, na.rm = TRUE),
     `Tested positive` = sum(num_positive, na.rm = TRUE),
     .groups = "drop"
-  ) |> 
+  ) |>
   mutate(
     `Positive (%)` = (`Tested positive` / `Adults and nymphs`) * 100
-  ) |> 
+  ) |>
   rename(Year = year)
 
 # Generate the tinytable with formatting
-tt(summary_table, width = 1) |> 
-  format_tt(j = 2:6, digits = 0, num_mark_big = ",") |> 
+tt(summary_table, width = 1) |>
+  format_tt(j = 2:6, digits = 0, num_mark_big = ",") |>
   # num_fmt = "decimal" gives one decimal place (the default rounds to significant figures)
-  format_tt(j = 7, digits = 1, num_fmt = "decimal", num_zero = TRUE) |> 
+  format_tt(j = 7, digits = 1, num_fmt = "decimal", num_zero = TRUE) |>
   # Escape the % in the column name so LaTeX prints it instead of treating it as a comment
-  format_tt(escape = TRUE) |> 
+  format_tt(escape = TRUE) |>
   style_tt(j = 2:7, align = "r")
 ```
 
@@ -275,7 +275,7 @@ Over all surveys, 606 adults and nymphs were collected.
 # Convert year to factor with full levels from 2013 to 2023 to display gap years
 full_years <- as.character(2013:2023)
 
-plot_data <- analysis_data |> 
+plot_data <- analysis_data |>
   mutate(year = factor(as.character(year), levels = full_years))
 
 # Plot raw points with horizontal jitter
@@ -339,7 +339,7 @@ park_summary <- analysis_data |>
 
 # Split data into zero-count sites and positive-count sites
 zero_parks <- park_summary |> filter(total_ticks == 0)
-pos_parks  <- park_summary |> filter(total_ticks > 0)
+pos_parks <- park_summary |> filter(total_ticks > 0)
 
 # Plot geographic map
 ggplot() +
@@ -354,7 +354,7 @@ ggplot() +
   geom_point(
     data = zero_parks,
     aes(x = longitude, y = latitude),
-    shape = 1,          # Hollow circle
+    shape = 1, # Hollow circle
     color = "grey55",
     size = 2.5,
     stroke = 0.8,
@@ -410,14 +410,14 @@ area, the type of habitat that would be expected to hold more ticks.
 #| message: false
 
 # Aggregate ticks per park, filter for top 10, and sort ascending for horizontal display
-top10_parks <- analysis_data |> 
-  group_by(park_locations) |> 
+top10_parks <- analysis_data |>
+  group_by(park_locations) |>
   summarize(
     total_ticks = sum(total_blts, na.rm = TRUE),
     .groups = "drop"
-  ) |> 
-  filter(total_ticks >= 1) |> 
-  slice_max(order_by = total_ticks, n = 10, with_ties=FALSE) |> 
+  ) |>
+  filter(total_ticks >= 1) |>
+  slice_max(order_by = total_ticks, n = 10, with_ties = FALSE) |>
   mutate(
     park_locations = fct_reorder(park_locations, total_ticks)
   )

@@ -18,7 +18,7 @@ raw_data <- read_csv("data/01-raw_data/raw_data.csv")
 # The 'geometry' column contains strings that look like
 # {"type": "Point", "coordinates": [-79.360567, 43.62612]}
 # Use regex to extract the latitude and longitude values from the string
-pattern <- '\\[\\s*(-?\\d+\\.\\d+)\\s*,\\s*(-?\\d+\\.\\d+)\\s*\\]'
+pattern <- "\\[\\s*(-?\\d+\\.\\d+)\\s*,\\s*(-?\\d+\\.\\d+)\\s*\\]"
 coordinates <- str_match(
   raw_data$geometry, pattern
 )
@@ -40,7 +40,7 @@ cleaned_data <-
     num_positive = `# Positive`,
     year = Year
   ) |>
-  # Keep only necessary columns. 
+  # Keep only necessary columns.
   # 'geometry' column can be dropped since latitude and longitude have been extracted
   select(
     id, park_locations, year, blt_larvae, blt_adults_and_nymphs, total_blts,

@@ -1,11 +1,11 @@
 #### Preamble ####
-# Purpose: Downloads and saves the Blacklegged Tick surveillance data 
+# Purpose: Downloads and saves the Blacklegged Tick surveillance data
 # and the City of Toronto boundary from Open Data Toronto.
 # Author: Shrey Sati
 # Date: 26 September 2026
 # Contact: shrey.sati@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: 
+# Pre-requisites:
 # - The `opendatatoronto`, `dplyr`, `readr`, and `sf` packages must be installed and loaded
 # Any other information needed? N/A
 
@@ -30,9 +30,9 @@ raw_data <-
 #### Download Toronto Boundary Data ####
 boundary_resources <- list_package_resources("841fb820-46d0-46ac-8dcb-d20f27e57bcc")
 
-toronto_boundary <- 
-  boundary_resources |> 
-  filter(name == "toronto-boundary-wgs84") |> 
+toronto_boundary <-
+  boundary_resources |>
+  filter(name == "toronto-boundary-wgs84") |>
   get_resource()
 
 
