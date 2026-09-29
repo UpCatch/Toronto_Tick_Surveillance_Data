@@ -5,8 +5,8 @@
 # Contact: shrey.sati@mail.utoronto.ca
 # License: MIT
 # Pre-requisites:
-  # - 02-download_data.R has been run
-  # - data/01-raw_data/raw_data.csv exists
+# - 02-download_data.R has been run
+# - data/01-raw_data/raw_data.csv exists
 # Any other information needed? N/A
 
 #### Workspace setup ####
@@ -16,7 +16,7 @@ library(tidyverse)
 raw_data <- read_csv("data/01-raw_data/raw_data.csv")
 
 # The 'geometry' column contains strings that look like
-# {"coordinates": [[-79.360567, 43.62612]], "type": "MultiPoint"}
+# {"type": "Point", "coordinates": [-79.360567, 43.62612]}
 # Use regex to extract the latitude and longitude values from the string
 pattern <- '\\[\\s*(-?\\d+\\.\\d+)\\s*,\\s*(-?\\d+\\.\\d+)\\s*\\]'
 coordinates <- str_match(
@@ -31,7 +31,7 @@ cleaned_data <-
     latitude = as.numeric(coordinates[, 3])
   ) |>
   # Rename the columns so that they are more human-readable
-  rename (
+  rename(
     id = `_id`,
     park_locations = `Park Location`,
     total_blts = `Total BLTs`,
