@@ -1,14 +1,18 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
+title: "Blacklegged Ticks in Toronto Parks Are Concentrated in the East"
+subtitle: "Three-quarters of surveys from 2013 to 2023 found no ticks, while five Rouge Valley sites produced two-thirds of the ticks collected and most of the infected ones"
 author: "Shrey Sati"
 thanks: "Code and data are available at: [https://github.com/UpCatch/Toronto_Tick_Surveillance_Data](https://github.com/UpCatch/Toronto_Tick_Surveillance_Data)."
 date: today
 date-format: long
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "We analyze Toronto Public Health's surveillance of blacklegged ticks, which carry the bacterium that causes Lyme disease, using 233 surveys of 84 sites in city parks from 2013 to 2023. Three-quarters of surveys found no ticks, while five Rouge Valley sites, in the city's northeast, produced 65% of the 606 ticks collected and 83% of those that tested positive. The rise in infected ticks after 2015 reflects how much of each year's catch came from the Rouge Valley, not a change across Toronto. Knowing that Lyme disease risk is concentrated in a handful of parks can help focus prevention where it is needed most."
 format: pdf
 number-sections: true
 bibliography: references.bib
+execute:
+  echo: false
+  warning: false
+  message: false
 ---
 
 ```{r}
@@ -29,36 +33,202 @@ analysis_data <- read_csv(here("data", "02-analysis_data", "analysis_data.csv"))
 
 # Introduction
 
-Overview paragraph
+As summers get warmer and the threat of climate change looms, Canadians have yet
+another thing to worry about: Lyme disease. But how big an issue is it, and is
+climate change actually linked to it? Lyme disease is becoming more common in
+Canada, with reported cases rising from 338 in 2012 to 2,525 in 2022 [@wafy2026]
+and preliminary counts passing 5,200 in 2024 [@dev2026]. The disease is spread by
+the blacklegged tick, also known as the deer tick, which carries the bacterium that
+causes it. Over recent decades, the blacklegged tick's range and numbers have
+continued to grow [@eisen2016], and Ontario is at the centre of this change:
+in the first half of 2026, the province accounted for nearly two-thirds of blacklegged tick reports
+submitted by the public in Canada [@otis2026]. All of Toronto is now considered
+an estimated risk area for Lyme disease [@tph_lyme]. However, national surveillance
+reports only by province, and public reports depend on who notices a tick, if
+anyone does, so neither can say where within a city the risk lies.
 
-Estimand paragraph
+In this paper, we analyze all 233 surveys in Toronto Public Health's Blacklegged Tick Surveillance dataset, covering 84 sites between 2013 and 2023. Three-quarters of surveys found no ticks, and 52 of the 84 sites never recorded one. Most ticks were concentrated in a few places in the east of the city. Five sites in the Rouge Valley produced 65% of the 606 ticks collected, and a smaller cluster appeared on the Toronto Islands. Infected ticks were even more concentrated. 45% of Rouge Valley ticks tested positive, compared with 17% elsewhere, and these five sites held 83% of all positive ticks. The citywide share of positive ticks rose after 2015, but this reflects how much of each year's catch came from the Rouge Valley rather than a trend across the city, and the data cannot show whether climate change played a role. This matters because surveillance is meant to show where and when to focus prevention [@wafy2026]. It also shapes how the data should be read: the program samples in the fall and so largely misses nymphs, the tick stage most likely to infect people [@eisen2016].
 
-Results paragraph
-
-Why it matters paragraph
-
-Telegraphing paragraph: The remainder of this paper is structured as follows. @sec-data....
-
-
-
-
-
+The remainder of this paper is structured as follows. @sec-data describes the data source, how ticks are collected and tested, each variable in the dataset, and the patterns in tick counts, locations and infection. @sec-appendix-cleaning describes how the raw data were cleaned and tested.
 
 # Data {#sec-data}
 
 ## Overview
 
-We use the statistical programming language R [@citeR].... Our data [@blacklegged_tick_data].... Following @tellingstories, we consider...
+We use the statistical programming language R [@citeR]. The dataset used in this paper comes from Toronto Public Health's
+Blacklegged Tick Surveillance dataset [@blacklegged_tick_data], which was obtained
+from the City of Toronto's Open Data Portal [@opendatatoronto]. Additional packages in R 
+that helped to support this paper include `tidyverse` [@tidyverse], `ggplot2` [@ggplot2]
+and `tinytable` [@tinytable] for graphs and tables respectively, `here` [@here] for
+handling file paths, and the map for the City of Toronto's municipal boundary [@toronto_boundary],
+which `sf` [@sf] helped to draw. With inspiration from Rohan Alexander's book [@tellingstories],
+we focus on what the data can tell us about the world we inhabit.
 
-Overview text
+In Ontario, blacklegged ticks (*Ixodes scapularis*) are the only ticks that transmit
+*Borrelia burgdorferi*, the bacterium that causes Lyme disease [@tph_lyme]. Over
+the last two decades, Lyme disease in Canada and in the United States has increased 
+both in incidence and geographic extent [@eisen2016]. Eisen et al. explain that a tick's development, survival,
+and its ability to find a host are directly affected by temperature and humidity. 
+Compared to a generalized life cycle of approximately 2 years for ticks inhabiting
+the northeastern United States, the life cycle of some ticks in comparatively
+colder southeastern Canada may take 3 to 4 years, which lowers their reproductive
+rate [@eisen2016]. Justin Wood, founder of the tick-testing company Geneticks, told CP24 that climate
+change is driving the rise in tick reports. Ontario accounted for 63.7% of
+blacklegged tick reports across Canada in the first half of 2026, and the province's
+reports rose 72.8% from the same period in 2025 [@otis2026]. Toronto is now
+considered to be an Estimated Risk Area for Lyme disease, but Toronto Public
+Health considers the risk of infection low, although increasing [@tph_lyme]. National reports 
+note that regular surveillance activity helps identify any shifting trends
+in Lyme disease occurrence and geographic distribution [@wafy2026].
+
+Every row in the dataset represents a single site surveyed in a year. In total,
+there are 233 rows detailing 84 site names covered from 2013 to 2019 and 2023.
+No surveillance was conducted from 2020 to 2022. For each site and year in the dataset,
+Toronto Public Health records:
+
+- **Site name** and **location** (as a single latitude and longitude representing
+the entire site)
+- **Year** the surveillance took place
+- **Adult and nymph ticks collected** (the last two stages in a blacklegged 
+tick's life cycle)
+- **Larvae collected** (newly hatched ticks, the first stage in the life cycle)
+- **Ticks that tested positive** (assumed to be for *Borrelia burgdorferi*; see below)
+
+There is another column in the dataset named "Total BLTs", but given that it is
+identical to the adult and nymph counts in all rows, we treat the two columns
+as one variable. Furthermore, the **Rouge Valley**, located on the Northeastern side of
+Toronto, contains 5 sites including the name "Rouge". To learn more about the
+data cleaning process for this dataset, such as how the latitudes and longitudes
+were extracted, and how sites with similar names were handled, please see
+@sec-appendix-cleaning.
 
 ## Measurement
 	
-Some paragraphs about how we go from a phenomena in the world to an entry in the dataset.
+Toronto Public Health's method of surveillance is a process termed "tick dragging",
+involving a surveyor dragging a white flannel cloth behind them across the ground
+and through vegetation, waiting for ticks to latch on [@pho_tick_procedure]. Sites
+are chosen according to how suitable they are for blacklegged ticks to inhabit or
+if there was a previously confirmed finding, and drags are conducted during the
+fall when adult ticks are at their most active [@tph_surveillance]. Collected ticks
+are removed, placed into a collection vial, and shipped to the National Microbiology
+Laboratory to identify species and run diagnostics [@pho_tick_procedure]. The
+results for every site then make up one row for that particular year.
+
+While the dataset does not explicitly name the pathogen identified in the positive
+count column, Toronto Public Health states that testing is done for *B. burgdorferi*,
+and as of 2023, for the *Babesia* species, *Anaplasma phagocytophilum* and the
+Powassan virus. Given that the surveillance program started with the goal of
+tracking blacklegged ticks carrying Lyme disease as its core focus, we assume that
+the positive count values represent ticks with the *B. burgdorferi* bacteria present.
+
+Each step of the method shapes what the data mean. Firstly, the count of blacklegged ticks
+at a given site is a sample rather than a census. Tick dragging fails to account
+for ticks attached to animals, and a drag may not "catch" every single tick along
+the path. The number of ticks found can also depend on the weather or the care
+of the surveyor. Toronto Public Health notes that there may be ticks present at a
+site even if none were reportedly collected [@tph_surveillance]. Secondly, the sites
+are chosen based on past tick findings or their suitability for ticks to inhabit.
+This choice, while understandable, can have the effect of overrepresenting sites
+with ticks. Lastly, dragging in the fall misses the peak of nymph activity, which runs from
+late May to early July [@eisen2016]. Dragging is timed for adults partly because
+nymphs are so small [@pho_tick_procedure], but nymphs matter most for people: they
+are more likely than adults to stay attached long enough to transmit infection
+[@eisen2016].  
+
+## Ethical considerations
+
+The primary ethical consideration is that naming parks where ticks were found 
+might prevent people from visiting them. This is possibly made worse by the fact
+that most sites with large tick presence are in Scarborough, in Toronto's east end. Furthermore, a site not recording any
+ticks does not confirm that no ticks are present [@tph_surveillance]. The dataset
+may be interpreted by the public as a ranking of which sites are safe to visit and
+which are not, when it should be perceived as which sites require the greatest amount
+of precaution.
+
+## Similar datasets
+
+The Public Health Agency of Canada publishes a national summary once annually that
+combines tick counts from dragging with images of ticks submitted by the public,
+primarily through the online, image-based platform eTick.ca [@wafy2026]. Otis notes
+that because eTick relies on users to submit data, confirmed numbers likely
+underestimate actual population numbers in Canada [@otis2026]. Accurate numbers
+from public submissions also rely on individuals noticing a tick and choosing to
+report it, which is not always the case. Toronto Public Health's dataset was
+the only source found that records systematic tick collection at named locations in the city.
+
+## Summary of the variables
+
+@tbl-variable-summary takes the three count variables and provides a summary
+across all site visits for every year surveillance occurred. The mean represents
+the average tick tally per survey, the median is the middle value when surveys are
+ordered by count in ascending order, and the standard deviation shows the degree
+to which the counts are spread around the mean. The median is 0 for all variables,
+and the standard deviation is considerably higher than the mean in all cases, which
+means most surveys found nothing while a few found many ticks.
+
+```{r}
+#| label: tbl-variable-summary
+#| tbl-cap: "Summary statistics for tick counts across all 233 surveys (one per site per year)."
+#| echo: false
+#| warning: false
+#| message: false
+
+# Summary statistics for the three count variables across all 233 surveys
+summary_df <- data.frame(
+  Variable = c("Adults and nymphs", "Larvae", "Tested positive"),
+  Mean = c(
+    mean(analysis_data$blt_adults_and_nymphs),
+    mean(analysis_data$blt_larvae),
+    mean(analysis_data$num_positive)
+  ),
+  Median = c(
+    median(analysis_data$blt_adults_and_nymphs),
+    median(analysis_data$blt_larvae),
+    median(analysis_data$num_positive)
+  ),
+  `Standard deviation` = c(
+    sd(analysis_data$blt_adults_and_nymphs),
+    sd(analysis_data$blt_larvae),
+    sd(analysis_data$num_positive)
+  ),
+  Maximum = c(
+    max(analysis_data$blt_adults_and_nymphs),
+    max(analysis_data$blt_larvae),
+    max(analysis_data$num_positive)
+  ),
+  Total = c(
+    sum(analysis_data$blt_adults_and_nymphs),
+    sum(analysis_data$blt_larvae),
+    sum(analysis_data$num_positive)
+  ),
+  # Number of surveys with at least one tick in each category
+  `Surveys above zero` = c(
+    sum(analysis_data$blt_adults_and_nymphs > 0),
+    sum(analysis_data$blt_larvae > 0),
+    sum(analysis_data$num_positive > 0)
+  ),
+  check.names = FALSE
+)
+
+summary_df |>
+  tt() |>
+  # Mean and standard deviation to exactly two decimal places
+  format_tt(j = c(2, 4), digits = 2, num_fmt = "decimal", num_zero = TRUE) |>
+  # Whole-number columns with thousands separators
+  format_tt(j = c(3, 5, 6, 7), digits = 0, num_mark_big = ",") |>
+  style_tt(j = 2:7, align = "r")
+```
+
+
+@tbl-annual-tick-summary showcases the same counts broken down by year. From the
+table, we can see that the number of sites surveyed went from 1 in 2013 to 36 in
+2016. This suggests that a year with a greater tick count can be a result of the
+increase in sites searched. Thus, yearly totals are not a good indicator of the
+tick count in Toronto.
 
 ```{r}
 #| label: tbl-annual-tick-summary
-#| tbl-cap: "The share of collected adult and nymph ticks that tested positive rose from under 6% before 2016 to between 29% and 43% from 2016 onward. No surveillance took place in 2020–2022."
+#| tbl-cap: "Sites surveyed, ticks collected and ticks that tested positive by year, 2013–2023."
 #| echo: false
 #| warning: false
 #| message: false
@@ -89,9 +259,15 @@ tt(summary_table, width = 1) |>
   style_tt(j = 2:7, align = "r")
 ```
 
+## Ticks found each survey
+Looking at all 233 surveys, 176 (76%) of them found no blacklegged ticks
+(@fig-tick-surveillance). While the average survey found 2.6 ticks, this is inflated
+by some sites having much larger counts (e.g., Rouge Park in 2017 with 122 ticks found).
+Over all surveys, 606 adults and nymphs were collected.
+
 ```{r}
 #| label: fig-tick-surveillance
-#| fig-cap: "Distribution of total blacklegged ticks collected per park across surveillance years in Toronto."
+#| fig-cap: "Adult and nymph ticks collected in each survey, 2013–2023; each dot is one site in one year."
 #| echo: false
 #| warning: false
 #| message: false
@@ -124,86 +300,24 @@ ggplot(plot_data, aes(x = year, y = total_blts)) +
   )
 ```
 
-```{r}
-#| label: fig-positivity-rate
-#| fig-cap: "From 2016 onward, between 29% and 43% of the blacklegged ticks collected in Toronto parks each year tested positive. The number under each year (n) is the count of adult and nymph ticks collected that year. 2013 and 2014 are omitted because only one and three ticks were collected, too few for a meaningful rate. No surveillance took place in 2020–2022 (shaded)."
-#| echo: false
-#| warning: false
-#| message: false
+@tbl-annual-tick-summary shows that larvae were rare, with just 22 being found in total. This
+tally comes from 4 surveys at 3 different sites (Anewen Greenbelt in 2017 and 2018,
+Highland Creek Park in 2017, and Cedar Ridge Park in 2018). Larvae hatch from eggs
+laid by fed adult females [@eisen2016], which could suggest that ticks were reproducing
+at those sites. Larvae are not tested and are not part of the total tick count,
+so we exclude them from the figures that follow.
 
-# Calculate annual positivity rates and complete timeline for 2015-2023
-positivity_data <- analysis_data |> 
-  filter(year >= 2015) |> 
-  group_by(year) |> 
-  summarize(
-    total_positive = sum(num_positive, na.rm = TRUE),
-    total_tested = sum(blt_adults_and_nymphs, na.rm = TRUE),
-    .groups = "drop"
-  ) |> 
-  mutate(
-    pct_positive = (total_positive / total_tested) * 100
-  ) |> 
-  complete(
-    year = 2015:2023
-  ) |> 
-  mutate(
-    year_label = if_else(
-      is.na(total_tested),
-      as.character(year),
-      paste0(year, "\nn = ", total_tested)
-    ),
-    # Keep the years in order on the axis
-    year_label = factor(year_label, levels = year_label),
-    # Separate groups so the line does not bridge the 2020-2022 gap
-    period = if_else(year < 2020, "before", "after")
-  )
+## Location of found ticks
 
-# Plot line chart
-ggplot(positivity_data, aes(x = year_label, y = pct_positive, group = period)) +
-  # Declare discrete x-axis
-  scale_x_discrete(drop = FALSE) +
-  # Shade years 2020-2022 with no surveillance 
-  annotate(
-    "rect",
-    xmin = 5.5, xmax = 8.5, ymin = -Inf, ymax = Inf,
-    fill = "grey92"
-  ) +
-  annotate(
-    "text",
-    x = 7, y = 25, label = "No surveillance",
-    colour = "grey40", size = 3.5
-  ) +
-  geom_line(
-    color = "#8B0000",
-    linewidth = 0.9,
-    na.rm = TRUE
-  ) +
-  geom_point(
-    color = "#8B0000",
-    size = 2.8,
-    na.rm = TRUE
-  ) +
-  scale_y_continuous(
-    limits = c(0, 50),
-    labels = scales::label_percent(scale = 1),
-    expand = expansion(mult = c(0, 0.05))
-  ) +
-  labs(
-    x = "Surveillance Year",
-    y = "Positivity Rate (%)"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    panel.grid.minor = element_blank(),
-    panel.grid.major.x = element_blank(),
-    axis.line.x = element_line(color = "grey60", linewidth = 0.4)
-  )
-```
-
+The majority of ticks were on the east side of Toronto (@fig-toronto-ticks-map).
+Sites that were east of longitude 79.25°W produced around 88% of all collected ticks.
+The Rouge Valley sites (five in total) produced 65% of the total ticks found
+(392 ticks). There are smaller clusters around the Toronto Islands, but most sites
+never recorded any ticks. Of all 84 sites surveyed, 52 had no ticks in any year.
 
 ```{r}
 #| label: fig-toronto-ticks-map
-#| fig-cap: "Blacklegged ticks cluster in the east end of Toronto, around the Rouge Valley, with a smaller cluster on the Toronto Islands. Each circle is one surveillance site, with counts summed over all years surveyed. Hollow grey circles mark sites where no ticks were ever found; red circles are sized by the total number of adult and nymph ticks collected. The grey outline is the City of Toronto boundary."
+#| fig-cap: "Surveillance sites across Toronto, sized by total ticks collected; hollow grey circles mark sites where no ticks were found."
 #| echo: false
 #| fig-width: 7
 #| fig-height: 4.5
@@ -278,9 +392,18 @@ ggplot() +
   )
 ```
 
+
+@fig-top10-parks showcases the top ten sites with the greatest number of ticks.
+Rouge Park recorded 209, and the Rouge Valley sites occupy five spots in the top
+10, with Colonel Danforth Trail and Morningside Park also representing Toronto's
+east end. This illustrates the pattern that climate assigns a broad area
+where ticks can inhabit, but actual tick numbers within that region depend on
+woodland habitat and host densities [@eisen2016]. Rouge Valley is a large woodland
+area, the type of habitat that would be expected to hold more ticks.
+
 ```{r}
 #| label: fig-top10-parks
-#| fig-cap: "Top 10 Toronto parks with the highest cumulative blacklegged tick counts across all surveillance years."
+#| fig-cap: "The ten sites with the most blacklegged ticks, summed across all surveillance years."
 #| echo: false
 #| fig-height: 5
 #| warning: false
@@ -325,10 +448,84 @@ ggplot(top10_parks, aes(x = total_ticks, y = park_locations)) +
     panel.grid.minor = element_blank(),
     panel.grid.major.y = element_blank(),
     axis.line.x = element_line(color = "grey60", linewidth = 0.4),
-    axis.text.y = element_text(size = 10, face = "bold", color = "grey20"),
+    axis.text.y = element_text(size = 10, face = "bold", color = "grey20")
   )
 ```
 
-# References 
+## Ticks that tested positive
+
+Of all 606 adults and nymphs collected, 35% or 211 ticks tested positive for the
+*Borrelia burgdorferi* bacterium, compared with 27.4% collected by dragging across
+Ontario in 2022 [@wafy2026]. Most infected ticks were present in the small number
+of large catches (@fig-positive-vs-collected). The 13 surveys that found 10 or
+more ticks accounted for 82% of all ticks found but 96% of positive ones. 
+
+```{r}
+#| label: fig-positive-vs-collected
+#| fig-cap: "Ticks that tested positive against ticks collected, for the 57 surveys that found at least one tick."
+#| fig-width: 7
+#| fig-height: 4.5
+#| echo: false
+#| warning: false
+#| message: false
+
+# Keep surveys that collected at least one adult or nymph, and flag Rouge Valley sites
+positive_data <- analysis_data |>
+  filter(blt_adults_and_nymphs > 0) |>
+  mutate(
+    area = if_else(
+      str_detect(park_locations, "Rouge"),
+      "Rouge Valley sites",
+      "Other sites"
+    )
+  )
+
+# pseudo_log stretches small values but, unlike a log scale, can show zero
+pseudo_log_axis <- scales::pseudo_log_trans(base = 10)
+
+set.seed(853)
+
+ggplot(positive_data, aes(x = blt_adults_and_nymphs, y = num_positive, colour = area)) +
+  # Reference line: every tick collected tested positive
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey60") +
+  geom_jitter(width = 0.03, height = 0.03, size = 2.5, alpha = 0.8) +
+  scale_x_continuous(trans = pseudo_log_axis, breaks = c(1, 3, 10, 30, 100)) +
+  scale_y_continuous(trans = pseudo_log_axis, breaks = c(0, 1, 3, 10, 30, 60)) +
+  scale_colour_manual(values = c("Rouge Valley sites" = "#8b0000", "Other sites" = "grey50")) +
+  labs(
+    x = "Adult and nymph ticks collected",
+    y = "Ticks that tested positive",
+    colour = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+```
+
+The positivity percentage increased sharply from just under 6% in 2015 to between
+29% and 43% in the years that followed (@tbl-annual-tick-summary), but we cannot
+attribute this to climate change. This jump is largely from Rouge Park, where
+29 of 63 ticks tested positive in 2016 alone. Outside the Rouge Valley, the data
+show no steady trend in this regard. This reflects the literature: the spread of blacklegged ticks in Canada has
+coincided with warming, but no change in exposure has yet been conclusively linked
+to climate change [@eisen2016].
 
 
+# References
+
+::: {#refs}
+:::
+
+\newpage
+
+\appendix
+
+# Data cleaning {#sec-appendix-cleaning}
+
+The raw data were downloaded from the Open Data Portal with `opendatatoronto` [@opendatatoronto], which was then saved before cleaning. Cleaning made four changes. Each site's location is stored in the raw data as a text field in GeoJSON format. The first change was to extract the longitude and latitude from this text into two numeric columns. Second, the columns were renamed to consistent, readable names, and the original location field was dropped. Third, the count columns and year were converted to whole numbers. Fourth, only the columns used in this paper were kept. There were no rows that were removed.
+
+Two issues were noted but not changed, so that the data match what Toronto Public Health published. Two sites, Upper Rouge Trail Park and Cedar Ridge Park, have slightly different coordinates in different years. The cleaned data keep both, and only the map in @fig-toronto-ticks-map places each site at its first recorded location so that it appears once. There are also several sites that appear under more than one name, such as "Wards Island" and "Toronto Islands: Ward's", or "Guild Park" and "Guild Park and Gardens". These were left as recorded, which is why we refer to 84 site names rather than 84 distinct places.
+
+The cleaned data were checked with tests written using `testthat` [@testthat], which confirm the number of rows and columns, that each year is a surveillance year, that site names are never missing, that the total count equals the adult and nymph count, that positive ticks never exceed ticks collected, and that every location falls within Toronto.
